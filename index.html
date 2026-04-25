@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNG DPI Converter — クリップアート用解像度変換ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f0ee;
+    --surface: #fdf8f6;
+    --sage: #7d9b7a;
+    --sage-light: #c8dbc6;
+    --sage-pale: #eaf2e9;
+    --pink: #e8a8b0;
+    --pink-light: #f7dde0;
+    --pink-pale: #fdf0f1;
+    --ink: #3b3634;
+    --muted: #9a9390;
+    --border: #e2d9d6;
+    --white: #fffcfb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Jost', sans-serif;
+    font-weight: 400;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: -120px; right: -120px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, #f2c8cd55 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -80px; left: -80px;
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, #c8dbc655 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .wrap { max-width: 660px; margin: 0 auto; padding: 0 24px 80px; position: relative; z-index: 1; }
+  header { padding: 52px 0 44px; margin-bottom: 36px; }
+  .logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--pink); box-shadow: 16px 0 0 var(--sage-light); }
+  .eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage); font-weight: 500; margin-left: 30px; }
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px, 6vw, 52px); line-height: 1.1; font-weight: 400; color: var(--ink); margin-bottom: 14px; }
+  h1 em { font-style: italic; color: var(--sage); }
+  header p { font-size: 14px; color: var(--muted); max-width: 420px; line-height: 1.7; }
+  .divider { height: 1px; background: linear-gradient(90deg, var(--pink-light), var(--sage-light), transparent); margin-bottom: 36px; }
+  .drop-zone { border: 1.5px dashed var(--pink); border-radius: 24px; padding: 52px 32px; text-align: center; cursor: pointer; position: relative; background: var(--pink-pale); transition: all 0.2s; margin-bottom: 24px; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--sage); background: var(--sage-pale); }
+  .drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { width: 56px; height: 56px; margin: 0 auto 16px; background: var(--white); border-radius: 50%; border: 1px solid var(--pink-light); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .drop-zone h2 { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; margin-bottom: 6px; color: var(--ink); }
+  .drop-zone p { font-size: 13px; color: var(--muted); }
+  .pill { display: inline-block; margin-top: 14px; background: var(--white); border: 1px solid var(--pink-light); border-radius: 20px; padding: 4px 16px; font-size: 11px; letter-spacing: 0.06em; color: var(--muted); }
+  .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; padding: 14px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; }
+  .controls label { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; white-space: nowrap; }
+  .dpi-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .dpi-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); font-family: 'Jost', sans-serif; font-size: 13px; cursor: pointer; color: var(--muted); transition: all 0.15s; }
+  .dpi-btn:hover { border-color: var(--sage); color: var(--sage); }
+  .dpi-btn.active { background: var(--sage); border-color: var(--sage); color: white; font-weight: 500; }
+  .summary-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 13px; color: var(--muted); }
+  .summary-bar strong { color: var(--ink); font-weight: 500; }
+  .clear-btn { margin-left: auto; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-family: 'Jost', sans-serif; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.1s; }
+  .clear-btn:hover { border-color: var(--pink); color: var(--pink); }
+  .file-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+  .file-card { display: flex; align-items: center; gap: 14px; background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; transition: border-color 0.15s; animation: fadeUp 0.2s ease; }
+  .file-card.done { border-color: var(--sage-light); background: var(--sage-pale); }
+  .file-card.error { border-color: var(--pink); }
+  .thumb-wrap { width: 42px; height: 42px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: repeating-conic-gradient(#e8e0dc 0% 25%, #f5f0ee 0% 50%) 0 0 / 10px 10px; border: 1px solid var(--border); }
+  .thumb-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+  .file-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .file-badge { font-size: 11px; padding: 3px 11px; border-radius: 20px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+  .badge-pending { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .badge-done { background: var(--sage-pale); color: var(--sage); border: 1px solid var(--sage-light); }
+  .badge-error { background: var(--pink-pale); color: var(--pink); border: 1px solid var(--pink-light); }
+  .badge-processing { background: var(--pink-pale); color: var(--pink); border: 1px solid var(--pink-light); }
+  .remove-btn { background: none; border: none; cursor: pointer; color: var(--border); font-size: 18px; line-height: 1; padding: 2px 4px; flex-shrink: 0; transition: color 0.1s; }
+  .remove-btn:hover { color: var(--pink); }
+  .btn-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .convert-btn { flex: 1; padding: 16px; background: linear-gradient(135deg, var(--sage) 0%, #6a8a67 100%); color: white; border: none; border-radius: 14px; font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.15s, transform 0.1s; box-shadow: 0 4px 20px #7d9b7a30; }
+  .convert-btn:hover { opacity: 0.92; }
+  .convert-btn:active { transform: scale(0.99); }
+  .convert-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .progress-wrap { height: 4px; background: var(--border); border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
+  .progress-fill { height: 4px; background: linear-gradient(90deg, var(--pink), var(--sage)); border-radius: 4px; width: 0%; transition: width 0.25s ease; }
+  .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 16px; text-align: center; }
+  .zip-ready { background: var(--sage-pale); border: 1.5px solid var(--sage-light); border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; animation: fadeUp 0.3s ease; }
+  .zip-icon { font-size: 26px; flex-shrink: 0; }
+  .zip-info { flex: 1; }
+  .zip-info strong { font-size: 14px; font-weight: 500; color: var(--sage); display: block; }
+  .zip-info span { font-size: 12px; color: var(--muted); }
+  .zip-dl-btn { background: var(--sage); color: white; border: none; border-radius: 10px; padding: 10px 20px; font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+  .zip-dl-btn:hover { opacity: 0.85; }
+  .rename-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; padding: 14px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; }
+  .rename-row label { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; white-space: nowrap; }
+  .rename-input { flex: 1; min-width: 160px; font-family: 'Jost', sans-serif; font-size: 13px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); color: var(--ink); outline: none; transition: border-color 0.15s; }
+  .rename-input:focus { border-color: var(--sage); }
+  .rename-input::placeholder { color: var(--muted); }
+  .rename-preview { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .rename-preview span { color: var(--sage); font-weight: 500; }
+  .note { background: var(--pink-pale); border-left: 3px solid var(--pink-light); border-radius: 0 10px 10px 0; padding: 14px 18px; font-size: 13px; color: var(--muted); line-height: 1.7; margin-top: 4px; }
+  .note strong { color: var(--ink); font-weight: 500; }
+  footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .footer-dots { display: flex; gap: 5px; }
+  .footer-dots span { width: 6px; height: 6px; border-radius: 50%; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  canvas { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-row">
+      <div class="logo-dot"></div>
+      <span class="eyebrow">Clipart Tools</span>
+    </div>
+    <h1>PNG <em>DPI</em><br>Converter</h1>
+    <p>背景透過PNGを300dpiに一括変換。Etsyのクリップアート販売に最適です。</p>
+  </header>
+  <div class="divider"></div>
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept="image/png" multiple>
+    <div class="drop-icon">🌸</div>
+    <h2>PNGをここにドロップ</h2>
+    <p>またはクリックしてファイルを選択</p>
+    <span class="pill">PNG · 複数ファイル対応 · 透過保持 · ZIP出力</span>
+  </div>
+  <div id="controls" class="controls" style="display:none;">
+    <label>解像度</label>
+    <div class="dpi-group" id="dpiGroup">
+      <button class="dpi-btn" data-dpi="72">72 dpi</button>
+      <button class="dpi-btn" data-dpi="150">150 dpi</button>
+      <button class="dpi-btn active" data-dpi="300">300 dpi</button>
+      <button class="dpi-btn" data-dpi="600">600 dpi</button>
+    </div>
+  </div>
+  <div id="renameRow" class="rename-row" style="display:none;">
+    <label>ファイル名</label>
+    <input class="rename-input" id="renameInput" type="text" placeholder="例：christmas（空白で元のファイル名）">
+    <span class="rename-preview" id="renamePreview"></span>
+  </div>
+  <div id="summaryBar" class="summary-bar" style="display:none;">
+    <span id="summaryText"></span>
+    <button class="clear-btn" id="clearBtn">すべて削除</button>
+  </div>
+  <div class="file-list" id="fileList"></div>
+  <div class="btn-row" id="btnRow" style="display:none;">
+    <button class="convert-btn" id="convertBtn">変換して ZIP ダウンロード 🌿</button>
+  </div>
+  <div class="progress-wrap" id="progressWrap" style="display:none;"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel" style="display:none;"></div>
+  <div class="zip-ready" id="zipReady" style="display:none;">
+    <span class="zip-icon">🎀</span>
+    <div class="zip-info">
+      <strong>ZIPファイルの準備ができました</strong>
+      <span id="zipMeta"></span>
+    </div>
+    <button class="zip-dl-btn" id="zipDlBtn">ダウンロード</button>
+  </div>
+  <div class="note" id="note" style="display:none;">
+    <strong>メモ：</strong> PNGの <strong>pHYsチャンク</strong>（解像度メタデータ）を書き換えます。ピクセル数・透過情報はそのまま保持されます。ファイル名は <strong id="noteFilename">元のファイル名_300dpi.png</strong> で保存されます。
+  </div>
+</div>
+<footer>
+  <div class="footer-dots">
+    <span style="background:var(--pink)"></span>
+    <span style="background:var(--sage-light)"></span>
+    <span style="background:var(--pink-light)"></span>
+  </div>
+  ブラウザ上で完結 · サーバー送信なし · 完全無料
+</footer>
+<canvas id="canvas"></canvas>
+<script>
+const dropZone=document.getElementById('dropZone'),fileInput=document.getElementById('fileInput'),fileList=document.getElementById('fileList'),controls=document.getElementById('controls'),btnRow=document.getElementById('btnRow'),convertBtn=document.getElementById('convertBtn'),progressWrap=document.getElementById('progressWrap'),progressFill=document.getElementById('progressFill'),progressLabel=document.getElementById('progressLabel'),zipReady=document.getElementById('zipReady'),zipMeta=document.getElementById('zipMeta'),zipDlBtn=document.getElementById('zipDlBtn'),summaryBar=document.getElementById('summaryBar'),summaryText=document.getElementById('summaryText'),clearBtn=document.getElementById('clearBtn'),noteEl=document.getElementById('note'),noteFilename=document.getElementById('noteFilename'),renameRow=document.getElementById('renameRow'),renameInput=document.getElementById('renameInput'),renamePreview=document.getElementById('renamePreview'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let selectedDpi=300,files=[],zipBlob=null;
+
+function getOutputName(originalName, index, total, prefix, dpi) {
+  if (!prefix.trim()) return originalName.replace(/\.png$/i,'')+'_'+dpi+'dpi.png';
+  const pad = total >= 100 ? 3 : total >= 10 ? 2 : 2;
+  const num = String(index+1).padStart(pad,'0');
+  return prefix.trim()+'_'+num+'_'+dpi+'dpi.png';
+}
+
+function updatePreview() {
+  const prefix = renameInput.value;
+  const dpi = selectedDpi;
+  if (!prefix.trim()) {
+    renamePreview.innerHTML = `例：<span>flower_${dpi}dpi.png</span>`;
+  } else {
+    renamePreview.innerHTML = `例：<span>${prefix.trim()}_001_${dpi}dpi.png</span>`;
+  }
+  if (noteFilename) noteFilename.textContent = prefix.trim() ? `${prefix.trim()}_001_${dpi}dpi.png` : `元のファイル名_${dpi}dpi.png`;
+}
+
+renameInput.addEventListener('input', updatePreview);
+document.getElementById('dpiGroup').addEventListener('click',e=>{const btn=e.target.closest('.dpi-btn');if(!btn)return;document.querySelectorAll('.dpi-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selectedDpi=parseInt(btn.dataset.dpi);updatePreview();});
+clearBtn.addEventListener('click',()=>{files=[];zipBlob=null;zipReady.style.display='none';render();});
+fileInput.addEventListener('change',e=>{addFiles(Array.from(e.target.files));fileInput.value='';});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag-over');addFiles(Array.from(e.dataTransfer.files).filter(f=>f.type==='image/png'));});
+function addFiles(f){f.forEach(x=>{if(!files.find(y=>y.file.name===x.name&&y.file.size===x.size))files.push({file:x,status:'pending'});});zipBlob=null;zipReady.style.display='none';render();}
+function render(){
+  fileList.innerHTML='';
+  files.forEach((item,i)=>{
+    const card=document.createElement('div');card.className='file-card'+(item.status==='done'?' done':item.status==='error'?' error':'');
+    const thumb=document.createElement('div');thumb.className='thumb-wrap';
+    const img=document.createElement('img');img.src=URL.createObjectURL(item.file);thumb.appendChild(img);
+    const info=document.createElement('div');info.className='file-info';
+    const name=document.createElement('div');name.className='file-name';name.textContent=item.file.name;
+    const meta=document.createElement('div');meta.className='file-meta';meta.textContent=(item.file.size/1024).toFixed(0)+' KB';
+    info.appendChild(name);info.appendChild(meta);
+    const sm={pending:['badge-pending','待機中'],done:['badge-done','✓ 完了'],error:['badge-error','✗ エラー'],processing:['badge-processing','変換中…']};
+    const [cls,txt]=sm[item.status];
+    const badge=document.createElement('span');badge.className='file-badge '+cls;badge.textContent=txt;
+    const rb=document.createElement('button');rb.className='remove-btn';rb.innerHTML='&times;';
+    rb.onclick=()=>{files.splice(i,1);zipBlob=null;zipReady.style.display='none';render();};
+    card.appendChild(thumb);card.appendChild(info);card.appendChild(badge);card.appendChild(rb);
+    fileList.appendChild(card);
+  });
+  const has=files.length>0;
+  controls.style.display=has?'flex':'none';
+  renameRow.style.display=has?'flex':'none';
+  btnRow.style.display=has?'flex':'none';
+  noteEl.style.display=has?'block':'none';
+  summaryBar.style.display=has?'flex':'none';
+  if(has){const kb=files.reduce((s,f)=>s+f.file.size,0)/1024;summaryBar.innerHTML=`<span><strong>${files.length}枚</strong> · ${kb<1024?kb.toFixed(0)+' KB':(kb/1024).toFixed(1)+' MB'}</span><button class="clear-btn" id="clearBtn2">すべて削除</button>`;document.getElementById('clearBtn2').onclick=()=>{files=[];zipBlob=null;zipReady.style.display='none';render();};}
+  convertBtn.disabled=!has;
+  updatePreview();
+}
+convertBtn.addEventListener('click',async()=>{
+  if(!files.length)return;
+  convertBtn.disabled=true;progressWrap.style.display='block';progressLabel.style.display='block';progressFill.style.width='0%';zipReady.style.display='none';zipBlob=null;
+  const zip=new JSZip();let ok=0;
+  for(let i=0;i<files.length;i++){
+    files[i].status='processing';render();
+    progressFill.style.width=((i/files.length)*100)+'%';
+    progressLabel.textContent=`変換中… ${i+1} / ${files.length}`;
+    try{const blob=await convertPng(files[i].file,selectedDpi);const newName=getOutputName(files[i].file.name,i,files.length,renameInput.value,selectedDpi);zip.file(newName,await blob.arrayBuffer());files[i].status='done';ok++;}
+    catch{files[i].status='error';}
+    render();
+  }
+  progressFill.style.width='100%';progressLabel.textContent='ZIPを生成中…';
+  zipBlob=await zip.generateAsync({type:'blob',compression:'STORE'});
+  const kb=zipBlob.size/1024;
+  setTimeout(()=>{progressWrap.style.display='none';progressLabel.style.display='none';progressFill.style.width='0%';},600);
+  zipMeta.textContent=`${ok}枚 · ${kb<1024?kb.toFixed(0)+' KB':(kb/1024).toFixed(1)+' MB'}`;
+  zipReady.style.display='flex';convertBtn.disabled=false;convertBtn.textContent='もう一度変換する 🌿';
+});
+zipDlBtn.addEventListener('click',()=>{if(!zipBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(zipBlob);a.download='converted_'+selectedDpi+'dpi.zip';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);});
+function convertPng(file,dpi){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=e=>{const img=new Image();img.onload=()=>{canvas.width=img.width;canvas.height=img.height;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);canvas.toBlob(blob=>{blob.arrayBuffer().then(buf=>resolve(injectPHYs(buf,dpi)));
+
+},'image/png');};img.onerror=reject;img.src=e.target.result;};reader.onerror=reject;reader.readAsDataURL(file);});}
+function injectPHYs(buf,dpi){const ppm=Math.round(dpi/0.0254),chunk=new Uint8Array(21),dv=new DataView(chunk.buffer);dv.setUint32(0,9);chunk[4]=0x70;chunk[5]=0x48;chunk[6]=0x59;chunk[7]=0x73;dv.setUint32(8,ppm);dv.setUint32(12,ppm);chunk[16]=1;dv.setUint32(17,crc32(chunk.slice(4,17)));const src=new Uint8Array(buf);let pos=8;while(pos<src.length){const len=(src[pos]<<24|src[pos+1]<<16|src[pos+2]<<8|src[pos+3])>>>0;const type=String.fromCharCode(src[pos+4],src[pos+5],src[pos+6],src[pos+7]);if(type==='IDAT'||type==='IEND')break;pos+=12+len;}const out=new Uint8Array(src.length+21);out.set(src.slice(0,pos));out.set(chunk,pos);out.set(src.slice(pos),pos+21);return new Blob([out],{type:'image/png'});}
+function crc32(data){let c=0xFFFFFFFF;for(let i=0;i<data.length;i++){c^=data[i];for(let j=0;j<8;j++)c=(c&1)?(c>>>1)^0xEDB88320:c>>>1;}return(c^0xFFFFFFFF)>>>0;}
+</script>
+</body>
+</html>
