@@ -464,17 +464,54 @@ function renderTilePreview() {
 function downloadPattern() {
   if (!cliparts.length) return;
   const exportSize=parseInt(document.getElementById('exportSize').value);
-  const size=parseInt(document.getElementById('itemSize').value), gap=parseInt(document.getElementById('itemGap').value);
-  const rot=parseInt(document.getElementById('itemRot').value)*Math.PI/180, rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
-  const step=size+gap, expCanvas=document.createElement('canvas');
+  const size=parseInt(document.getElementById('itemSize').value);
+  const gap=parseInt(document.getElementById('itemGap').value);
+  const rot=parseInt(document.getElementById('itemRot').value)*Math.PI/180;
+  const rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
+
+  // 書き出し用にフルサイズでタイルを描画
+  const n=Math.min(cliparts.length,4);
+  const tileCols=n<=1?1:2, tileRows=n<=2?1:2;
+  const step=size+gap;
+  const tileW=step*tileCols, tileH=step*tileRows;
+
+  const expTile=document.createElement('canvas');
+  expTile.width=tileW; expTile.height=tileH;
+  const expTileCtx=expTile.getContext('2d');
+
+  if(bgType==='pattern'){
+    const bgPat=document.getElementById('bgPatternType').value;
+    const bgC1=document.getElementById('bgCol1').value;
+    const bgC2=document.getElementById('bgCol2').value;
+    const bgC3=document.getElementById('bgCol3').value;
+    const bgS=parseInt(document.getElementById('bgPatSize').value);
+    const bgW=parseInt(document.getElementById('bgPatWeight').value);
+    drawGeoToCtx(expTileCtx,bgPat,Math.max(tileW,tileH),bgC1,bgC2,bgC3,bgS,bgW,45);
+  } else if(bgColor!=='transparent'){
+    expTileCtx.fillStyle=bgColor;
+    expTileCtx.fillRect(0,0,tileW,tileH);
+  }
+
+  const rng=seededRandom(SEED);
+  let idx=0;
+  for(let row=0;row<tileRows;row++) for(let col=0;col<tileCols;col++){
+    if(idx>=n) break;
+    const c=cliparts[idx]; idx++;
+    let x=col*step+step/2, y=row*step+step/2;
+    if(currentPreset==='brick'&&row%2!==0)x+=step/2;
+    if(currentPreset==='diagonal')x+=row*(step/2);
+    const r=rot+(rng()*2-1)*rand;
+    expTileCtx.save(); expTileCtx.translate(x,y); expTileCtx.rotate(r);
+    expTileCtx.drawImage(c.img,-size/2,-size/2,size,size); expTileCtx.restore();
+  }
+
+  // タイルを敷き詰めて書き出し
+  const expCanvas=document.createElement('canvas');
   expCanvas.width=exportSize; expCanvas.height=exportSize;
   const expCtx=expCanvas.getContext('2d');
-  if(bgColor!=='transparent'){expCtx.fillStyle=bgColor; expCtx.fillRect(0,0,exportSize,exportSize);}
-  // タイルをそのまま敷き詰めてダウンロード
-  const tw=offCanvas.width, th=offCanvas.height;
-  const tilesX=Math.ceil(exportSize/tw)+1, tilesY=Math.ceil(exportSize/th)+1;
+  const tilesX=Math.ceil(exportSize/tileW)+1, tilesY=Math.ceil(exportSize/tileH)+1;
   for(let row=0;row<tilesY;row++) for(let col=0;col<tilesX;col++){
-    expCtx.drawImage(offCanvas, col*tw, row*th, tw, th);
+    expCtx.drawImage(expTile, col*tileW, row*tileH, tileW, tileH);
   }
   const a=document.createElement('a'); a.href=expCanvas.toDataURL('image/png'); a.download=`clipart-pattern-${exportSize}px.png`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
