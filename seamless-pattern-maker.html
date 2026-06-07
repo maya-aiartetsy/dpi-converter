@@ -137,7 +137,13 @@ canvas { display: block; max-width: 100%; max-height: 500px; }
           <div class="control-group"><div class="control-label">ランダム回転 <span id="randVal">0°</span></div><input type="range" id="itemRand" min="0" max="45" value="0" oninput="updateVal('randVal',this.value+'°');drawPattern()"></div>
         </div>
         <div class="panel">
-          <div class="panel-title">背景カラー</div>
+          <div class="panel-title">背景タイプ</div>
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <button class="tile-btn active" id="bgTypeColor" onclick="setBgType('color',this)" style="flex:1;">単色</button>
+            <button class="tile-btn" id="bgTypePattern" onclick="setBgType('pattern',this)" style="flex:1;">パターン</button>
+          </div>
+          <div id="bgColorSection">
+          <div class="panel-title" style="margin-top:4px;">背景カラー</div>
           <div class="color-row" id="bgColorRow">
             <button class="color-btn active" style="background:#fffcfb;" onclick="setBg('#fffcfb',this)"></button>
             <button class="color-btn" style="background:#f5f0ee;" onclick="setBg('#f5f0ee',this)"></button>
@@ -147,6 +153,46 @@ canvas { display: block; max-width: 100%; max-height: 500px; }
             <button class="color-btn" style="background:#3b3634;" onclick="setBg('#3b3634',this)"></button>
             <button class="color-btn" style="background:transparent;border:1.5px dashed #ccc;" onclick="setBg('transparent',this)" title="透過">✕</button>
             <button class="color-custom"><input type="color" id="customColor" value="#ffffff" oninput="setBg(this.value,null)"></button>
+          </div>
+          </div>
+          <div id="bgPatternSection" style="display:none;">
+            <div class="panel-title" style="margin-top:4px;">背景パターン</div>
+            <select id="bgPatternType" style="width:100%;font-family:Jost,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;margin-bottom:10px;" onchange="drawPattern()">
+              <option value="stripe-v">縦ストライプ</option>
+              <option value="stripe-h">横ストライプ</option>
+              <option value="stripe-d">斜めストライプ</option>
+              <option value="check">チェック</option>
+              <option value="gingham">ギンガム</option>
+              <option value="argyle">アーガイル</option>
+              <option value="dot">ドット</option>
+              <option value="polka">ポルカドット</option>
+              <option value="herringbone">ヘリンボーン</option>
+              <option value="tartan">タータン</option>
+            </select>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;" id="bgPaletteRow">
+              <button class="color-btn active" style="background:#f7dde0;" onclick="setBgCol(0,'#f7dde0',this)"></button>
+              <button class="color-btn" style="background:#fffcfb;" onclick="setBgCol(0,'#fffcfb',this)"></button>
+              <button class="color-btn" style="background:#eaf2e9;" onclick="setBgCol(0,'#eaf2e9',this)"></button>
+              <button class="color-btn" style="background:#c8dbc6;" onclick="setBgCol(0,'#c8dbc6',this)"></button>
+              <button class="color-btn" style="background:#e8a8b0;" onclick="setBgCol(0,'#e8a8b0',this)"></button>
+              <button class="color-btn" style="background:#7d9b7a;" onclick="setBgCol(0,'#7d9b7a',this)"></button>
+              <button class="color-btn" style="background:#264653;" onclick="setBgCol(0,'#264653',this)"></button>
+              <button class="color-btn" style="background:#3b3634;" onclick="setBgCol(0,'#3b3634',this)"></button>
+              <button class="color-btn" style="background:#c9a96e;" onclick="setBgCol(0,'#c9a96e',this)"></button>
+              <button class="color-btn" style="background:#ffffff;" onclick="setBgCol(0,'#ffffff',this)"></button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">選択中カラー（最大3色）</div>
+            <div style="display:flex;gap:6px;margin-bottom:10px;" id="bgSelectedColors">
+              <div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#f7dde0;" id="bgSel0"></div>
+              <div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#fffcfb;" id="bgSel1"></div>
+              <div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#c8dbc6;" id="bgSel2"></div>
+              <button style="width:28px;height:28px;border-radius:6px;border:1.5px dashed var(--border);background:none;cursor:pointer;font-size:14px;color:var(--muted);" onclick="rotateBgColors()">↺</button>
+            </div>
+            <input type="hidden" id="bgCol1" value="#f7dde0">
+            <input type="hidden" id="bgCol2" value="#fffcfb">
+            <input type="hidden" id="bgCol3" value="#c8dbc6">
+            <div class="control-group" style="margin-top:8px;"><div class="control-label">パターンサイズ <span id="bgPatSizeVal">40px</span></div><input type="range" id="bgPatSize" min="10" max="120" value="40" oninput="updateVal('bgPatSizeVal',this.value+'px');drawPattern()"></div>
+            <div class="control-group"><div class="control-label">線の太さ <span id="bgPatWeightVal">4px</span></div><input type="range" id="bgPatWeight" min="1" max="30" value="4" oninput="updateVal('bgPatWeightVal',this.value+'px');drawPattern()"></div>
           </div>
         </div>
         <div class="panel">
@@ -276,6 +322,44 @@ function setPreset(preset, btn) {
   drawPattern();
 }
 
+let bgType = 'color';
+let bgColors = ['#f7dde0', '#fffcfb', '#c8dbc6'];
+let bgColorSlot = 0; // which slot to set next (cycles 0→1→2→0)
+
+function setBgCol(slot, color, btn) {
+  bgColors[bgColorSlot] = color;
+  document.getElementById('bgCol1').value = bgColors[0];
+  document.getElementById('bgCol2').value = bgColors[1];
+  document.getElementById('bgCol3').value = bgColors[2];
+  document.getElementById('bgSel0').style.background = bgColors[0];
+  document.getElementById('bgSel1').style.background = bgColors[1];
+  document.getElementById('bgSel2').style.background = bgColors[2];
+  bgColorSlot = (bgColorSlot + 1) % 3;
+  // highlight active slot
+  document.querySelectorAll('#bgSelectedColors div').forEach((d,i) => {
+    d.style.outline = i === bgColorSlot ? '2px solid var(--sage)' : 'none';
+  });
+  drawPattern();
+}
+
+function rotateBgColors() {
+  bgColors = [bgColors[2], bgColors[0], bgColors[1]];
+  document.getElementById('bgCol1').value = bgColors[0];
+  document.getElementById('bgCol2').value = bgColors[1];
+  document.getElementById('bgCol3').value = bgColors[2];
+  document.getElementById('bgSel0').style.background = bgColors[0];
+  document.getElementById('bgSel1').style.background = bgColors[1];
+  document.getElementById('bgSel2').style.background = bgColors[2];
+  drawPattern();
+}
+function setBgType(type, btn) {
+  bgType = type;
+  document.getElementById('bgTypeColor').classList.toggle('active', type==='color');
+  document.getElementById('bgTypePattern').classList.toggle('active', type==='pattern');
+  document.getElementById('bgColorSection').style.display = type==='color' ? 'block' : 'none';
+  document.getElementById('bgPatternSection').style.display = type==='pattern' ? 'block' : 'none';
+  drawPattern();
+}
 function setBg(color, btn) { bgColor=color; document.querySelectorAll('#bgColorRow .color-btn').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active'); drawPattern(); }
 function setTileView(n, btn) { tileView=n; document.querySelectorAll('#tab-clipart .tile-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderTilePreview(); }
 function updateVal(id, val) { document.getElementById(id).textContent=val; }
@@ -291,7 +375,15 @@ function drawPattern() {
   const tileW=step*tileCols, tileH=step*tileRows;
   offCanvas.width=tileW; offCanvas.height=tileH;
   offCtx.clearRect(0,0,tileW,tileH);
-  if(bgColor!=='transparent'){offCtx.fillStyle=bgColor; offCtx.fillRect(0,0,tileW,tileH);}
+  if(bgType==='pattern'){
+    const bgPat=document.getElementById('bgPatternType').value;
+    const bgC1=document.getElementById('bgCol1').value;
+    const bgC2=document.getElementById('bgCol2').value;
+    const bgC3=document.getElementById('bgCol3').value;
+    const bgS=parseInt(document.getElementById('bgPatSize').value);
+    const bgW=parseInt(document.getElementById('bgPatWeight').value);
+    drawGeoToCtx(offCtx,bgPat,Math.max(tileW,tileH),bgC1,bgC2,bgC3,bgS,bgW,45);
+  } else if(bgColor!=='transparent'){offCtx.fillStyle=bgColor; offCtx.fillRect(0,0,tileW,tileH);}
   const rng=seededRandom(SEED);
   let idx=0;
   for(let row=0;row<tileRows;row++) for(let col=0;col<tileCols;col++){
