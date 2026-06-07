@@ -144,15 +144,32 @@ canvas { display: block; max-width: 100%; max-height: 500px; }
           </div>
           <div id="bgColorSection">
           <div class="panel-title" style="margin-top:4px;">背景カラー</div>
-          <div class="color-row" id="bgColorRow">
-            <button class="color-btn active" style="background:#fffcfb;" onclick="setBg('#fffcfb',this)"></button>
-            <button class="color-btn" style="background:#f5f0ee;" onclick="setBg('#f5f0ee',this)"></button>
-            <button class="color-btn" style="background:#fdf0f1;" onclick="setBg('#fdf0f1',this)"></button>
-            <button class="color-btn" style="background:#eaf2e9;" onclick="setBg('#eaf2e9',this)"></button>
-            <button class="color-btn" style="background:#264653;" onclick="setBg('#264653',this)"></button>
-            <button class="color-btn" style="background:#3b3634;" onclick="setBg('#3b3634',this)"></button>
-            <button class="color-btn" style="background:transparent;border:1.5px dashed #ccc;" onclick="setBg('transparent',this)" title="透過">✕</button>
-            <button class="color-custom"><input type="color" id="customColor" value="#ffffff" oninput="setBg(this.value,null)"></button>
+          <div style="margin-bottom:8px;">
+            <input type="color" id="bgColorPicker" value="#fffcfb" oninput="setBg(this.value,null)"
+              style="width:100%;height:44px;border-radius:10px;border:1px solid var(--border);cursor:pointer;padding:2px;">
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;">
+            <button class="color-btn active" style="background:#fffcfb;" onclick="setBg('#fffcfb',this);document.getElementById('bgColorPicker').value='#fffcfb'"></button>
+            <button class="color-btn" style="background:#f5f0ee;" onclick="setBg('#f5f0ee',this);document.getElementById('bgColorPicker').value='#f5f0ee'"></button>
+            <button class="color-btn" style="background:#fdf0f1;" onclick="setBg('#fdf0f1',this);document.getElementById('bgColorPicker').value='#fdf0f1'"></button>
+            <button class="color-btn" style="background:#eaf2e9;" onclick="setBg('#eaf2e9',this);document.getElementById('bgColorPicker').value='#eaf2e9'"></button>
+            <button class="color-btn" style="background:#c8dbc6;" onclick="setBg('#c8dbc6',this);document.getElementById('bgColorPicker').value='#c8dbc6'"></button>
+            <button class="color-btn" style="background:#e8a8b0;" onclick="setBg('#e8a8b0',this);document.getElementById('bgColorPicker').value='#e8a8b0'"></button>
+            <button class="color-btn" style="background:#f7dde0;" onclick="setBg('#f7dde0',this);document.getElementById('bgColorPicker').value='#f7dde0'"></button>
+            <button class="color-btn" style="background:#7d9b7a;" onclick="setBg('#7d9b7a',this);document.getElementById('bgColorPicker').value='#7d9b7a'"></button>
+            <button class="color-btn" style="background:#264653;" onclick="setBg('#264653',this);document.getElementById('bgColorPicker').value='#264653'"></button>
+            <button class="color-btn" style="background:#3b3634;" onclick="setBg('#3b3634',this);document.getElementById('bgColorPicker').value='#3b3634'"></button>
+            <button class="color-btn" style="background:#c9a96e;" onclick="setBg('#c9a96e',this);document.getElementById('bgColorPicker').value='#c9a96e'"></button>
+            <button class="color-btn" style="background:#f7e7ce;" onclick="setBg('#f7e7ce',this);document.getElementById('bgColorPicker').value='#f7e7ce'"></button>
+            <button class="color-btn" style="background:#e8e4f0;" onclick="setBg('#e8e4f0',this);document.getElementById('bgColorPicker').value='#e8e4f0'"></button>
+            <button class="color-btn" style="background:#ffffff;border:1px solid #ddd;" onclick="setBg('#ffffff',this);document.getElementById('bgColorPicker').value='#ffffff'"></button>
+            <button class="color-btn" style="background:#f0f0f0;border:1px solid #ddd;" onclick="setBg('#f0f0f0',this);document.getElementById('bgColorPicker').value='#f0f0f0'"></button>
+            <button class="color-btn" style="background:#ffe4b5;" onclick="setBg('#ffe4b5',this);document.getElementById('bgColorPicker').value='#ffe4b5'"></button>
+            <button class="color-btn" style="background:#b5d5e8;" onclick="setBg('#b5d5e8',this);document.getElementById('bgColorPicker').value='#b5d5e8'"></button>
+            <button class="color-btn" style="background:#d4b8e0;" onclick="setBg('#d4b8e0',this);document.getElementById('bgColorPicker').value='#d4b8e0'"></button>
+            <button class="color-btn" style="background:#f5c842;" onclick="setBg('#f5c842',this);document.getElementById('bgColorPicker').value='#f5c842'"></button>
+            <button class="color-btn" style="background:#e07070;" onclick="setBg('#e07070',this);document.getElementById('bgColorPicker').value='#e07070'"></button>
+            <button class="color-btn" style="background:transparent;border:1.5px dashed #ccc;font-size:9px;color:var(--muted);" onclick="setBg('transparent',this)" title="透過">透過</button>
           </div>
           </div>
           <div id="bgPatternSection" style="display:none;">
