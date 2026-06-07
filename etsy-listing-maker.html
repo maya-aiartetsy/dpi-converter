@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etsy Listing Image Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0ee; --surface: #fdf8f6; --sage: #7d9b7a; --sage-light: #c8dbc6; --sage-pale: #eaf2e9;
+  --pink: #e8a8b0; --pink-light: #f7dde0; --pink-pale: #fdf0f1; --ink: #3b3634; --muted: #9a9390;
+  --border: #e2d9d6; --white: #fffcfb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Jost', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+body::before { content:''; position:fixed; top:-120px; right:-120px; width:420px; height:420px; background:radial-gradient(circle,#f2c8cd44 0%,transparent 70%); pointer-events:none; z-index:0; }
+body::after { content:''; position:fixed; bottom:-80px; left:-80px; width:340px; height:340px; background:radial-gradient(circle,#c8dbc644 0%,transparent 70%); pointer-events:none; z-index:0; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; position: relative; z-index: 1; }
+
+header { padding: 44px 0 32px; margin-bottom: 8px; }
+.logo-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.logo-dot { width:8px; height:8px; border-radius:50%; background:var(--pink); box-shadow:14px 0 0 var(--sage-light); }
+.eyebrow { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--sage); font-weight:500; margin-left:26px; }
+h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(26px,4vw,40px); line-height:1.1; font-weight:300; margin-bottom:8px; }
+h1 em { font-style:italic; color:var(--sage); }
+header p { font-size:13px; color:var(--muted); }
+.divider { height:1px; background:linear-gradient(90deg,var(--pink-light),var(--sage-light),transparent); margin:24px 0; }
+
+.layout { display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start; }
+.panel { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:14px; }
+.panel-title { font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:12px; }
+
+/* Upload */
+.upload-zone { border:1.5px dashed var(--pink); border-radius:12px; padding:16px 10px; text-align:center; cursor:pointer; background:var(--pink-pale); transition:all 0.2s; position:relative; margin-bottom:10px; }
+.upload-zone:hover { border-color:var(--sage); background:var(--sage-pale); }
+.upload-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-zone p { font-size:11px; color:var(--muted); margin-top:4px; }
+.thumb-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; max-height:180px; overflow-y:auto; margin-bottom:8px; }
+.thumb { aspect-ratio:1; border-radius:6px; border:1.5px solid var(--border); background:repeating-conic-gradient(#e8e0dc 0% 25%,#f5f0ee 0% 50%) 0 0/8px 8px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; cursor:grab; }
+.thumb img { width:90%; height:90%; object-fit:contain; }
+.thumb .rm { position:absolute; top:1px; right:1px; width:14px; height:14px; background:var(--pink); border-radius:50%; border:none; cursor:pointer; font-size:9px; color:white; display:none; align-items:center; justify-content:center; }
+.thumb:hover .rm { display:flex; }
+.thumb.selected { border-color:var(--sage); box-shadow:0 0 0 2px var(--sage-light); }
+
+/* Text inputs */
+.text-input { width:100%; font-family:'Jost',sans-serif; font-size:12px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); outline:none; transition:border-color 0.15s; margin-bottom:8px; }
+.text-input:focus { border-color:var(--sage); }
+.text-input::placeholder { color:var(--muted); }
+
+/* Controls */
+.control-group { margin-bottom:12px; }
+.control-label { font-size:11px; color:var(--muted); margin-bottom:5px; display:flex; justify-content:space-between; }
+.control-label span { color:var(--ink); font-weight:500; }
+input[type=range] { width:100%; accent-color:var(--sage); cursor:pointer; }
+.color-row { display:flex; flex-wrap:wrap; gap:5px; }
+.color-btn { width:22px; height:22px; border-radius:50%; border:2px solid transparent; cursor:pointer; transition:transform 0.1s; }
+.color-btn:hover { transform:scale(1.1); }
+.color-btn.active { border-color:var(--ink); }
+.color-custom { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border); cursor:pointer; overflow:hidden; padding:0; background:none; }
+.color-custom input[type=color] { width:30px; height:30px; border:none; margin:-4px; cursor:pointer; }
+
+/* Layout presets */
+.layout-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px; }
+.layout-btn { padding:8px 4px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:10px; color:var(--muted); text-align:center; transition:all 0.15s; font-family:'Jost',sans-serif; }
+.layout-btn:hover { border-color:var(--sage); color:var(--sage); }
+.layout-btn.active { background:var(--sage-pale); border-color:var(--sage); color:var(--ink); font-weight:500; }
+.layout-icon { font-size:14px; display:block; margin-bottom:2px; }
+
+/* Font selector */
+.font-select { width:100%; font-family:'Jost',sans-serif; font-size:12px; padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); cursor:pointer; margin-bottom:8px; }
+
+/* Download */
+.dl-btn { width:100%; padding:13px; background:linear-gradient(135deg,var(--sage),#6a8a67); color:white; border:none; border-radius:12px; font-family:'Jost',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:opacity 0.15s; }
+.dl-btn:hover { opacity:0.9; }
+
+/* Canvas */
+.canvas-wrap { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:20px; position:sticky; top:20px; }
+.canvas-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.canvas-title { font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); font-weight:500; }
+.size-btns { display:flex; gap:6px; }
+.size-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface); font-family:'Jost',sans-serif; font-size:11px; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+.size-btn.active { background:var(--pink-pale); border-color:var(--pink); color:var(--ink); }
+.canvas-container { border-radius:10px; overflow:hidden; border:1px solid var(--border); background:repeating-conic-gradient(#e8e0dc 0% 25%,#f5f0ee 0% 50%) 0 0/10px 10px; display:flex; align-items:center; justify-content:center; }
+canvas { display:block; max-width:100%; }
+
+.chip-row { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+.chip { padding:4px 10px; border-radius:12px; border:1px solid var(--border); background:var(--surface); font-size:11px; color:var(--muted); cursor:pointer; font-family:'Jost',sans-serif; transition:all 0.15s; }
+.chip:hover { border-color:var(--pink); color:var(--ink); }
+.chip.active { background:var(--pink-pale); border-color:var(--pink); color:var(--ink); font-weight:500; }
+
+@media(max-width:768px){ .layout{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-row"><div class="logo-dot"></div><span class="eyebrow">Clipart Tools</span></div>
+    <h1>Etsy Listing<br><em>Image Maker</em></h1>
+    <p>クリップアートを並べてEtsyの商品画像を作成できます。</p>
+  </header>
+  <div class="divider"></div>
+
+  <div class="layout">
+    <!-- Left panel -->
+    <div>
+      <!-- Upload -->
+      <div class="panel">
+        <div class="panel-title">クリップアート</div>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple>
+          <div style="font-size:20px;">🌸</div>
+          <p>PNGをドロップまたは選択<br>（何枚でもOK）</p>
+        </div>
+        <div class="thumb-grid" id="thumbGrid"></div>
+        <p style="font-size:10px;color:var(--muted);">ドラッグで並び順を変えられます</p>
+      </div>
+
+      <!-- Text -->
+      <div class="panel">
+        <div class="panel-title">テキスト（任意）</div>
+        <input class="text-input" id="titleText" type="text" placeholder="タイトル（例：Halloween Circus）" oninput="draw()">
+        <input class="text-input" id="subtitleText" type="text" placeholder="サブタイトル（例：Clipart Bundle）" oninput="draw()">
+        <input class="text-input" id="infoText" type="text" placeholder="情報（例：55 PNG · 3000PX · 300DPI）" oninput="draw()">
+        <input class="text-input" id="bottomText" type="text" placeholder="下部テキスト（例：Commercial License Included）" oninput="draw()">
+        <div class="panel-title" style="margin-top:8px;">フォント</div>
+        <select class="font-select" id="fontSelect" onchange="draw()">
+          <option value="'Cormorant Garamond', serif">Cormorant Garamond（エレガント）</option>
+          <option value="Georgia, serif">Georgia（クラシック）</option>
+          <option value="'Palatino Linotype', serif">Palatino（上品）</option>
+          <option value="'Jost', sans-serif">Jost（モダン）</option>
+          <option value="Futura, 'Century Gothic', sans-serif">Century Gothic（丸み）</option>
+          <option value="'Courier New', monospace">Courier（レトロ）</option>
+        </select>
+        <div class="panel-title" style="margin-top:4px;">テキストカラー</div>
+        <div class="color-row" id="textColorRow">
+          <button class="color-btn active" style="background:#3b3634;" onclick="setTextColor('#3b3634',this)"></button>
+          <button class="color-btn" style="background:#7d9b7a;" onclick="setTextColor('#7d9b7a',this)"></button>
+          <button class="color-btn" style="background:#e8a8b0;" onclick="setTextColor('#e8a8b0',this)"></button>
+          <button class="color-btn" style="background:#c9a96e;" onclick="setTextColor('#c9a96e',this)"></button>
+          <button class="color-btn" style="background:#ffffff;border:1px solid #ddd;" onclick="setTextColor('#ffffff',this)"></button>
+          <button class="color-custom"><input type="color" id="customTextColor" value="#3b3634" oninput="setTextColor(this.value,null)"></button>
+        </div>
+      </div>
+
+      <!-- Background -->
+      <div class="panel">
+        <div class="panel-title">背景カラー</div>
+        <div class="color-row" id="bgColorRow">
+          <button class="color-btn active" style="background:#fffcfb;" onclick="setBgColor('#fffcfb',this)"></button>
+          <button class="color-btn" style="background:#f5f0ee;" onclick="setBgColor('#f5f0ee',this)"></button>
+          <button class="color-btn" style="background:#fdf0f1;" onclick="setBgColor('#fdf0f1',this)"></button>
+          <button class="color-btn" style="background:#eaf2e9;" onclick="setBgColor('#eaf2e9',this)"></button>
+          <button class="color-btn" style="background:#264653;" onclick="setBgColor('#264653',this)"></button>
+          <button class="color-btn" style="background:#3b3634;" onclick="setBgColor('#3b3634',this)"></button>
+          <button class="color-btn" style="background:#f7e7ce;" onclick="setBgColor('#f7e7ce',this)"></button>
+          <button class="color-btn" style="background:#e8e4f0;" onclick="setBgColor('#e8e4f0',this)"></button>
+          <button class="color-custom"><input type="color" id="customBgColor" value="#fffcfb" oninput="setBgColor(this.value,null)"></button>
+        </div>
+      </div>
+
+      <!-- Layout -->
+      <div class="panel">
+        <div class="panel-title">グリッドレイアウト</div>
+        <div class="layout-grid">
+          <button class="layout-btn active" data-cols="3" onclick="setCols(3,this)"><span class="layout-icon">⊞</span>3列</button>
+          <button class="layout-btn" data-cols="4" onclick="setCols(4,this)"><span class="layout-icon">⊟</span>4列</button>
+          <button class="layout-btn" data-cols="5" onclick="setCols(5,this)"><span class="layout-icon">▦</span>5列</button>
+          <button class="layout-btn" data-cols="2" onclick="setCols(2,this)"><span class="layout-icon">◻</span>2列</button>
+          <button class="layout-btn" data-cols="6" onclick="setCols(6,this)"><span class="layout-icon">⊠</span>6列</button>
+          <button class="layout-btn" data-cols="1" onclick="setCols(1,this)"><span class="layout-icon">▬</span>1列</button>
+        </div>
+        <div class="control-group">
+          <div class="control-label">アイテムサイズ <span id="itemSzVal">160px</span></div>
+          <input type="range" id="itemSz" min="60" max="400" value="160" oninput="updateV('itemSzVal',this.value+'px');draw()">
+        </div>
+        <div class="control-group">
+          <div class="control-label">間隔 <span id="itemGapVal">20px</span></div>
+          <input type="range" id="itemGap" min="0" max="80" value="20" oninput="updateV('itemGapVal',this.value+'px');draw()">
+        </div>
+        <div class="control-group">
+          <div class="control-label">上下の余白 <span id="paddingVal">60px</span></div>
+          <input type="range" id="paddingSlider" min="10" max="200" value="60" oninput="updateV('paddingVal',this.value+'px');draw()">
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="panel">
+        <div class="panel-title">書き出しサイズ</div>
+        <div class="size-btns" style="margin-bottom:8px;">
+          <button class="size-btn active" data-w="2000" data-h="2000" onclick="setExportSize(2000,2000,this)">正方形</button>
+          <button class="size-btn" data-w="2700" data-h="2025" onclick="setExportSize(2700,2025,this)">横長</button>
+          <button class="size-btn" data-w="2025" data-h="2700" onclick="setExportSize(2025,2700,this)">縦長</button>
+          <button class="size-btn" data-w="0" data-h="0" onclick="toggleCustomSize(this)">カスタム</button>
+        </div>
+        <div id="customSizeWrap" style="display:none;display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">幅 (px)</div>
+            <input class="text-input" id="customW" type="number" value="2000" min="100" max="8000" style="margin-bottom:0;" oninput="setCustomSize()">
+          </div>
+          <div style="font-size:16px;color:var(--muted);padding-top:16px;">×</div>
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">高さ (px)</div>
+            <input class="text-input" id="customH" type="number" value="2000" min="100" max="8000" style="margin-bottom:0;" oninput="setCustomSize()">
+          </div>
+        </div>
+        <button class="dl-btn" id="dlBtn" onclick="downloadImage()">画像をダウンロード 🌿</button>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-wrap">
+      <div class="canvas-header">
+        <div class="canvas-title">プレビュー</div>
+      </div>
+      <div class="canvas-container" id="canvasContainer">
+        <canvas id="mainCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let images = [];
+let bgColor = '#fffcfb';
+let textColor = '#3b3634';
+let gridCols = 3;
+let exportW = 2000, exportH = 2000;
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+// Upload
+document.getElementById('fileInput').addEventListener('change', e => { loadFiles(Array.from(e.target.files)); e.target.value=''; });
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.style.borderColor='var(--sage)'; });
+uz.addEventListener('dragleave', () => uz.style.borderColor='');
+uz.addEventListener('drop', e => { e.preventDefault(); uz.style.borderColor=''; loadFiles(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'))); });
+
+function loadFiles(files) {
+  files.forEach(f => {
+    const img = new Image(), url = URL.createObjectURL(f);
+    img.onload = () => { images.push({img, url, name:f.name}); renderThumbs(); draw(); };
+    img.src = url;
+  });
+}
+
+function renderThumbs() {
+  const grid = document.getElementById('thumbGrid'); grid.innerHTML='';
+  images.forEach((item, i) => {
+    const div = document.createElement('div'); div.className='thumb'; div.draggable=true;
+    div.dataset.idx=i;
+    const img = document.createElement('img'); img.src=item.url;
+    const rm = document.createElement('button'); rm.className='rm'; rm.innerHTML='×';
+    rm.onclick=e=>{ e.stopPropagation(); images.splice(i,1); renderThumbs(); draw(); };
+    div.appendChild(img); div.appendChild(rm); grid.appendChild(div);
+    div.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', i));
+    div.addEventListener('dragover', e => e.preventDefault());
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      const from=parseInt(e.dataTransfer.getData('text/plain')), to=i;
+      if(from===to) return;
+      const moved=images.splice(from,1)[0]; images.splice(to,0,moved);
+      renderThumbs(); draw();
+    });
+  });
+}
+
+function setBgColor(color, btn) { bgColor=color; document.querySelectorAll('#bgColorRow .color-btn').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active'); draw(); }
+function setTextColor(color, btn) { textColor=color; document.querySelectorAll('#textColorRow .color-btn').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active'); draw(); }
+function setCols(n, btn) { gridCols=n; document.querySelectorAll('.layout-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); draw(); }
+function setExportSize(w, h, btn) {
+  exportW=w; exportH=h;
+  document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('customSizeWrap').style.display='none';
+  draw();
+}
+function toggleCustomSize(btn) {
+  document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const wrap=document.getElementById('customSizeWrap');
+  wrap.style.display='flex';
+  setCustomSize();
+}
+function setCustomSize() {
+  const w=parseInt(document.getElementById('customW').value)||2000;
+  const h=parseInt(document.getElementById('customH').value)||2000;
+  exportW=Math.max(100,Math.min(8000,w));
+  exportH=Math.max(100,Math.min(8000,h));
+  draw();
+}
+function updateV(id, val) { document.getElementById(id).textContent=val; }
+
+function draw() {
+  const itemSz = parseInt(document.getElementById('itemSz').value);
+  const itemGap = parseInt(document.getElementById('itemGap').value);
+  const padding = parseInt(document.getElementById('paddingSlider').value);
+  const font = document.getElementById('fontSelect').value;
+  const title = document.getElementById('titleText').value;
+  const subtitle = document.getElementById('subtitleText').value;
+  const info = document.getElementById('infoText').value;
+  const bottom = document.getElementById('bottomText').value;
+
+  const scale = exportW / 600;
+  const previewW = 600, previewH = Math.round(exportH / exportW * 600);
+
+  canvas.width = previewW; canvas.height = previewH;
+
+  const iSz = itemSz * (previewW / exportW);
+  const iGap = itemGap * (previewW / exportW);
+  const pad = padding * (previewW / exportW);
+
+  renderToCtx(ctx, previewW, previewH, iSz, iGap, pad, font, title, subtitle, info, bottom, false);
+}
+
+function renderToCtx(c, W, H, iSz, iGap, pad, font, title, subtitle, info, bottom, forExport) {
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = bgColor; c.fillRect(0, 0, W, H);
+
+  // Text heights
+  const titleSize = forExport ? Math.round(W*0.065) : Math.round(W*0.065);
+  const subtitleSize = Math.round(titleSize * 0.55);
+  const infoSize = Math.round(titleSize * 0.32);
+  const bottomSize = Math.round(titleSize * 0.28);
+
+  let topY = pad;
+  if (title) {
+    c.fillStyle = textColor;
+    c.font = `${Math.round(titleSize*0.7)}px italic ${font}`;
+    // Decorative arc-like effect with letter spacing
+    const titleUpper = title.toUpperCase();
+    c.font = `bold ${titleSize}px ${font}`;
+    c.textAlign = 'center';
+    c.fillText(titleUpper, W/2, topY + titleSize);
+    topY += titleSize + iGap * 0.5;
+  }
+  if (subtitle) {
+    c.font = `italic ${subtitleSize}px ${font}`;
+    c.textAlign = 'center';
+    c.fillStyle = textColor;
+    c.fillText(subtitle, W/2, topY + subtitleSize);
+    topY += subtitleSize + iGap * 0.3;
+  }
+  if (info) {
+    c.font = `${infoSize}px ${font}`;
+    c.textAlign = 'center';
+    c.fillStyle = textColor;
+    c.globalAlpha = 0.7;
+    c.fillText(info.toUpperCase(), W/2, topY + infoSize);
+    c.globalAlpha = 1;
+    topY += infoSize + iGap * 0.5;
+  }
+  if (title || subtitle || info) topY += iGap;
+
+  // Grid
+  if (images.length > 0) {
+    const cols = gridCols;
+    const totalGridW = cols * iSz + (cols-1) * iGap;
+    const startX = (W - totalGridW) / 2;
+    let rows = Math.ceil(images.length / cols);
+    let gridH = rows * iSz + (rows-1) * iGap;
+
+    // Adjust canvas height to fit content
+    let botH = bottom ? (bottomSize + pad) : pad;
+    const neededH = topY + gridH + iGap + botH;
+    if (neededH > H && !forExport) {
+      // just draw what fits
+    }
+
+    images.forEach((item, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      const x = startX + col * (iSz + iGap);
+      const y = topY + row * (iSz + iGap);
+      c.drawImage(item.img, x, y, iSz, iSz);
+    });
+    topY += gridH + iGap;
+  }
+
+  // Bottom text
+  if (bottom) {
+    c.font = `${bottomSize}px ${font}`;
+    c.textAlign = 'center';
+    c.fillStyle = textColor;
+    c.globalAlpha = 0.55;
+    // decorative dots
+    const bText = '· ' + bottom.toUpperCase() + ' ·';
+    c.fillText(bText, W/2, topY + bottomSize);
+    c.globalAlpha = 1;
+  }
+}
+
+function downloadImage() {
+  const itemSz = parseInt(document.getElementById('itemSz').value);
+  const itemGap = parseInt(document.getElementById('itemGap').value);
+  const padding = parseInt(document.getElementById('paddingSlider').value);
+  const font = document.getElementById('fontSelect').value;
+  const title = document.getElementById('titleText').value;
+  const subtitle = document.getElementById('subtitleText').value;
+  const info = document.getElementById('infoText').value;
+  const bottom = document.getElementById('bottomText').value;
+
+  const exp = document.createElement('canvas');
+  exp.width = exportW; exp.height = exportH;
+  const ec = exp.getContext('2d');
+  renderToCtx(ec, exportW, exportH, itemSz, itemGap, padding, font, title, subtitle, info, bottom, true);
+  const a = document.createElement('a'); a.href=exp.toDataURL('image/png'); a.download='etsy-listing-image.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// Initial draw
+draw();
+</script>
+</body>
+</html>
