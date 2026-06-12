@@ -6,117 +6,119 @@
 <title>Seamless Pattern Maker</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #f5f0ee; --surface: #fdf8f6; --sage: #7d9b7a; --sage-light: #c8dbc6; --sage-pale: #eaf2e9;
-  --pink: #e8a8b0; --pink-light: #f7dde0; --pink-pale: #fdf0f1; --ink: #3b3634; --muted: #9a9390;
-  --border: #e2d9d6; --white: #fffcfb;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Jost', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
-body::before { content: ''; position: fixed; top: -120px; right: -120px; width: 420px; height: 420px; background: radial-gradient(circle, #f2c8cd44 0%, transparent 70%); pointer-events: none; z-index: 0; }
-body::after { content: ''; position: fixed; bottom: -80px; left: -80px; width: 340px; height: 340px; background: radial-gradient(circle, #c8dbc644 0%, transparent 70%); pointer-events: none; z-index: 0; }
-.wrap { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; position: relative; z-index: 1; }
-header { padding: 48px 0 36px; margin-bottom: 8px; }
-.logo-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-.logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pink); box-shadow: 14px 0 0 var(--sage-light); }
-.eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sage); font-weight: 500; margin-left: 26px; }
-h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(28px, 5vw, 44px); line-height: 1.1; font-weight: 300; margin-bottom: 10px; }
-h1 em { font-style: italic; color: var(--sage); }
-header p { font-size: 14px; color: var(--muted); line-height: 1.7; }
-.divider { height: 1px; background: linear-gradient(90deg, var(--pink-light), var(--sage-light), transparent); margin: 28px 0; }
+:root{--bg:#f5f0ee;--surface:#fdf8f6;--sage:#7d9b7a;--sage-light:#c8dbc6;--sage-pale:#eaf2e9;--pink:#e8a8b0;--pink-light:#f7dde0;--pink-pale:#fdf0f1;--ink:#3b3634;--muted:#9a9390;--border:#e2d9d6;--white:#fffcfb;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+body::before{content:'';position:fixed;top:-120px;right:-120px;width:420px;height:420px;background:radial-gradient(circle,#f2c8cd44 0%,transparent 70%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;bottom:-80px;left:-80px;width:340px;height:340px;background:radial-gradient(circle,#c8dbc644 0%,transparent 70%);pointer-events:none;z-index:0;}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px 80px;position:relative;z-index:1;}
+header{padding:44px 0 28px;}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--pink);box-shadow:14px 0 0 var(--sage-light);}
+.eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--sage);font-weight:500;margin-left:26px;}
+h1{font-family:'Cormorant Garamond',serif;font-size:clamp(26px,4vw,40px);line-height:1.1;font-weight:300;margin-bottom:8px;}
+h1 em{font-style:italic;color:var(--sage);}
+header p{font-size:13px;color:var(--muted);}
+.divider{height:1px;background:linear-gradient(90deg,var(--pink-light),var(--sage-light),transparent);margin:20px 0 24px;}
+.tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:6px;}
+.tab-btn{flex:1;padding:10px;border-radius:12px;border:none;background:none;font-family:'Jost',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.tab-btn.active{background:var(--sage);color:white;}
+.tab-btn:hover:not(.active){background:var(--sage-pale);color:var(--ink);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
 
-/* Tabs */
-.tabs { display: flex; gap: 6px; margin-bottom: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 6px; }
-.tab-btn { flex: 1; padding: 10px; border-radius: 12px; border: none; background: none; font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.15s; }
-.tab-btn.active { background: var(--sage); color: white; }
-.tab-btn:hover:not(.active) { background: var(--sage-pale); color: var(--ink); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+/* Layout: left panel + right (preview + controls) */
+.main-layout{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start;}
+.right-layout{display:grid;grid-template-rows:auto auto;gap:12px;}
+.preview-controls{display:grid;grid-template-columns:1fr 200px;gap:12px;align-items:start;}
 
-.layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
-.panel { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 22px; margin-bottom: 16px; }
-.panel-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 14px; }
-.upload-zone { border: 1.5px dashed var(--pink); border-radius: 14px; padding: 20px 12px; text-align: center; cursor: pointer; background: var(--pink-pale); transition: all 0.2s; position: relative; margin-bottom: 14px; }
-.upload-zone:hover { border-color: var(--sage); background: var(--sage-pale); }
-.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.upload-zone p { font-size: 12px; color: var(--muted); margin-top: 6px; }
-.upload-icon { font-size: 20px; }
-.clipart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 16px; max-height: 200px; overflow-y: auto; }
-.clipart-thumb { aspect-ratio: 1; border-radius: 8px; border: 1.5px solid var(--border); background: repeating-conic-gradient(#e8e0dc 0% 25%, #f5f0ee 0% 50%) 0 0 / 8px 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
-.clipart-thumb img { width: 90%; height: 90%; object-fit: contain; }
-.clipart-thumb .remove { position: absolute; top: 2px; right: 2px; width: 16px; height: 16px; background: var(--pink); border-radius: 50%; border: none; cursor: pointer; font-size: 10px; color: white; display: none; align-items: center; justify-content: center; line-height: 1; }
-.clipart-thumb:hover .remove { display: flex; }
-.control-group { margin-bottom: 14px; }
-.control-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
-.control-label span { color: var(--ink); font-weight: 500; }
-input[type=range] { width: 100%; accent-color: var(--sage); cursor: pointer; }
-.color-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
-.color-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.1s; }
-.color-btn:hover { transform: scale(1.1); }
-.color-btn.active { border-color: var(--ink); }
-.color-custom { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border); cursor: pointer; overflow: hidden; padding: 0; background: none; }
-.color-custom input[type=color] { width: 32px; height: 32px; border: none; margin: -4px; cursor: pointer; }
-.preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
-.preset-btn { padding: 8px 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 10px; color: var(--muted); text-align: center; transition: all 0.15s; font-family: 'Jost', sans-serif; }
-.preset-btn:hover { border-color: var(--sage); color: var(--sage); }
-.preset-btn.active { background: var(--sage-pale); border-color: var(--sage); color: var(--ink); font-weight: 500; }
-.preset-icon { font-size: 16px; display: block; margin-bottom: 2px; }
-.dl-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, var(--sage), #6a8a67); color: white; border: none; border-radius: 12px; font-family: 'Jost', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; margin-top: 6px; }
-.dl-btn:hover { opacity: 0.9; }
-.dl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.canvas-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 20px; padding: 22px; }
-.canvas-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.canvas-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
-.canvas-container { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: repeating-conic-gradient(#e8e0dc 0% 25%, #f5f0ee 0% 50%) 0 0 / 12px 12px; display: flex; align-items: center; justify-content: center; min-height: 400px; }
-canvas { display: block; max-width: 100%; max-height: 500px; }
-.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-.empty-state .es-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-state p { font-size: 13px; line-height: 1.6; }
-.tiles-row { display: flex; gap: 8px; }
-.tile-btn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-family: 'Jost', sans-serif; font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center; }
-.tile-btn.active { background: var(--pink-pale); border-color: var(--pink); color: var(--ink); }
-.size-select { font-family: 'Jost', sans-serif; font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.panel{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px;}
+.panel-title{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:10px;}
 
-/* Geo pattern grid */
-.geo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-.geo-btn { aspect-ratio: 1; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; overflow: hidden; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
-.geo-btn:hover { border-color: var(--sage); }
-.geo-btn.active { border-color: var(--sage); box-shadow: 0 0 0 2px var(--sage-light); }
-.geo-btn canvas { width: 100%; height: 100%; display: block; }
-.geo-label { font-size: 9px; color: var(--muted); text-align: center; margin-top: 3px; }
+/* Upload */
+.upload-zone{border:1.5px dashed var(--pink);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;background:var(--pink-pale);transition:all 0.2s;position:relative;margin-bottom:8px;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--sage);background:var(--sage-pale);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-zone p{font-size:11px;color:var(--muted);margin-top:3px;}
+.clipart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px;max-height:160px;overflow-y:auto;}
+.clipart-thumb{aspect-ratio:1;border-radius:6px;border:1.5px solid var(--border);background:repeating-conic-gradient(#e8e0dc 0% 25%,#f5f0ee 0% 50%) 0 0/6px 6px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.clipart-thumb img{width:90%;height:90%;object-fit:contain;}
+.clipart-thumb .remove{position:absolute;top:1px;right:1px;width:14px;height:14px;background:var(--pink);border-radius:50%;border:none;cursor:pointer;font-size:9px;color:white;display:none;align-items:center;justify-content:center;}
+.clipart-thumb:hover .remove{display:flex;}
 
-/* Color pair */
-.color-pair { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
-.color-pair label { font-size: 11px; color: var(--muted); width: 40px; }
-.color-pair input[type=color] { width: 36px; height: 28px; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; padding: 2px; }
+/* Controls */
+.control-group{margin-bottom:10px;}
+.control-label{font-size:10px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;}
+.control-label span{color:var(--ink);font-weight:500;}
+input[type=range]{width:100%;accent-color:var(--sage);cursor:pointer;}
+.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:10px;}
+.preset-btn{padding:6px 2px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:9px;color:var(--muted);text-align:center;transition:all 0.15s;font-family:'Jost',sans-serif;}
+.preset-btn:hover{border-color:var(--sage);color:var(--sage);}
+.preset-btn.active{background:var(--sage-pale);border-color:var(--sage);color:var(--ink);font-weight:500;}
+.preset-icon{font-size:13px;display:block;margin-bottom:1px;}
 
-@media (max-width: 680px) { .layout { grid-template-columns: 1fr; } }
+/* Canvas */
+.canvas-wrap{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:16px;}
+.canvas-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.canvas-title{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.canvas-container{border-radius:10px;overflow:hidden;border:1px solid var(--border);background:repeating-conic-gradient(#e8e0dc 0% 25%,#f5f0ee 0% 50%) 0 0/10px 10px;display:flex;align-items:center;justify-content:center;min-height:360px;}
+canvas{display:block;max-width:100%;}
+.tiles-row{display:flex;gap:5px;}
+.tile-btn{flex:1;padding:6px;border-radius:7px;border:1px solid var(--border);background:var(--surface);font-family:'Jost',sans-serif;font-size:10px;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:center;}
+.tile-btn.active{background:var(--pink-pale);border-color:var(--pink);color:var(--ink);}
+
+/* Right controls panel */
+.right-ctrl{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.color-btn{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform 0.1s;}
+.color-btn:hover{transform:scale(1.1);}
+.color-btn.active{border-color:var(--ink);}
+.color-custom-sm{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);cursor:pointer;overflow:hidden;padding:0;background:none;}
+.color-custom-sm input[type=color]{width:26px;height:26px;border:none;margin:-3px;cursor:pointer;}
+.color-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px;}
+.dl-btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--sage),#6a8a67);color:white;border:none;border-radius:11px;font-family:'Jost',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:opacity 0.15s;}
+.dl-btn:hover{opacity:0.9;}
+.dl-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.size-select{width:100%;font-family:'Jost',sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;}
+.color-pair{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.color-pair label{font-size:10px;color:var(--muted);width:44px;flex-shrink:0;}
+.color-pair input[type=color]{flex:1;height:26px;border-radius:6px;border:1px solid var(--border);cursor:pointer;padding:2px;}
+.geo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.geo-btn{aspect-ratio:1;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;overflow:hidden;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.geo-btn:hover{border-color:var(--sage);}
+.geo-btn.active{border-color:var(--sage);box-shadow:0 0 0 2px var(--sage-light);}
+.geo-btn canvas{width:100%;height:100%;display:block;}
+.geo-label{font-size:8px;color:var(--muted);text-align:center;margin-top:2px;}
+.switch-row{display:flex;gap:5px;margin-bottom:8px;}
+.switch-btn{flex:1;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Jost',sans-serif;font-size:10px;color:var(--muted);cursor:pointer;transition:all 0.15s;text-align:center;}
+.switch-btn.active{background:var(--sage-pale);border-color:var(--sage);color:var(--ink);font-weight:500;}
+select.pat-select{width:100%;font-family:'Jost',sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;margin-bottom:6px;}
+
+@media(max-width:768px){.main-layout{grid-template-columns:1fr;}.preview-controls{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="logo-row"><div class="logo-dot"></div><span class="eyebrow">Clipart Tools</span></div>
-    <h1>Seamless <em>Pattern</em><br>Maker</h1>
-    <p>クリップアートパターンと幾何学パターンを作成・ダウンロードできます。</p>
+    <h1>Seamless <em>Pattern</em> Maker</h1>
+    <p>クリップアートと幾何学パターンを組み合わせてシームレスパターンを作成できます。</p>
   </header>
   <div class="divider"></div>
-
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('clipart',this)">🌸 クリップアートパターン</button>
     <button class="tab-btn" onclick="switchTab('geo',this)">◈ ストライプ・幾何学パターン</button>
   </div>
 
-  <!-- Tab 1: Clipart -->
+  <!-- TAB 1: Clipart -->
   <div class="tab-content active" id="tab-clipart">
-    <div class="layout">
+    <div class="main-layout">
+      <!-- Left: upload + layout -->
       <div>
         <div class="panel">
           <div class="panel-title">クリップアート</div>
           <div class="upload-zone" id="uploadZone">
             <input type="file" id="fileInput" accept="image/png,image/svg+xml,image/jpeg,image/webp" multiple>
-            <div class="upload-icon">🌸</div>
+            <div style="font-size:18px;">🌸</div>
             <p>PNG・SVGをドロップ<br>または クリックして選択</p>
           </div>
           <div class="clipart-grid" id="clipartGrid"></div>
@@ -131,137 +133,100 @@ canvas { display: block; max-width: 100%; max-height: 500px; }
             <button class="preset-btn" data-preset="dense" onclick="setPreset('dense',this)"><span class="preset-icon">⊡</span>密集</button>
             <button class="preset-btn" data-preset="sparse" onclick="setPreset('sparse',this)"><span class="preset-icon">○</span>ゆとり</button>
           </div>
-          <div class="control-group"><div class="control-label">サイズ <span id="sizeVal">120px</span></div><input type="range" id="itemSize" min="40" max="300" value="120" oninput="updateVal('sizeVal',this.value+'px');drawPattern()"></div>
-          <div class="control-group"><div class="control-label">間隔 <span id="gapVal">20px</span></div><input type="range" id="itemGap" min="0" max="120" value="20" oninput="updateVal('gapVal',this.value+'px');drawPattern()"></div>
+          <div class="control-group"><div class="control-label">サイズ <span id="sizeVal">300px</span></div><input type="range" id="itemSize" min="40" max="1500" value="300" oninput="updateVal('sizeVal',this.value+'px');drawPattern()"></div>
+          <div class="control-group"><div class="control-label">間隔 <span id="gapVal">20px</span></div><input type="range" id="itemGap" min="0" max="400" value="20" oninput="updateVal('gapVal',this.value+'px');drawPattern()"></div>
           <div class="control-group"><div class="control-label">回転 <span id="rotVal">0°</span></div><input type="range" id="itemRot" min="-45" max="45" value="0" oninput="updateVal('rotVal',this.value+'°');drawPattern()"></div>
           <div class="control-group"><div class="control-label">ランダム回転 <span id="randVal">0°</span></div><input type="range" id="itemRand" min="0" max="45" value="0" oninput="updateVal('randVal',this.value+'°');drawPattern()"></div>
         </div>
-        <div class="panel">
-          <div class="panel-title">背景タイプ</div>
-          <div style="display:flex;gap:6px;margin-bottom:12px;">
-            <button class="tile-btn active" id="bgTypeColor" onclick="setBgType('color',this)" style="flex:1;">単色</button>
-            <button class="tile-btn" id="bgTypePattern" onclick="setBgType('pattern',this)" style="flex:1;">パターン</button>
-          </div>
-          <div id="bgColorSection">
-          <div class="panel-title" style="margin-top:4px;">背景カラー</div>
-          <div style="margin-bottom:8px;">
-            <input type="color" id="bgColorPicker" value="#fffcfb" oninput="setBg(this.value,null)"
-              style="width:100%;height:44px;border-radius:10px;border:1px solid var(--border);cursor:pointer;padding:2px;">
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;">
-            <button class="color-btn active" style="background:#fffcfb;" onclick="setBg('#fffcfb',this);document.getElementById('bgColorPicker').value='#fffcfb'"></button>
-            <button class="color-btn" style="background:#f5f0ee;" onclick="setBg('#f5f0ee',this);document.getElementById('bgColorPicker').value='#f5f0ee'"></button>
-            <button class="color-btn" style="background:#fdf0f1;" onclick="setBg('#fdf0f1',this);document.getElementById('bgColorPicker').value='#fdf0f1'"></button>
-            <button class="color-btn" style="background:#eaf2e9;" onclick="setBg('#eaf2e9',this);document.getElementById('bgColorPicker').value='#eaf2e9'"></button>
-            <button class="color-btn" style="background:#c8dbc6;" onclick="setBg('#c8dbc6',this);document.getElementById('bgColorPicker').value='#c8dbc6'"></button>
-            <button class="color-btn" style="background:#e8a8b0;" onclick="setBg('#e8a8b0',this);document.getElementById('bgColorPicker').value='#e8a8b0'"></button>
-            <button class="color-btn" style="background:#f7dde0;" onclick="setBg('#f7dde0',this);document.getElementById('bgColorPicker').value='#f7dde0'"></button>
-            <button class="color-btn" style="background:#7d9b7a;" onclick="setBg('#7d9b7a',this);document.getElementById('bgColorPicker').value='#7d9b7a'"></button>
-            <button class="color-btn" style="background:#264653;" onclick="setBg('#264653',this);document.getElementById('bgColorPicker').value='#264653'"></button>
-            <button class="color-btn" style="background:#3b3634;" onclick="setBg('#3b3634',this);document.getElementById('bgColorPicker').value='#3b3634'"></button>
-            <button class="color-btn" style="background:#c9a96e;" onclick="setBg('#c9a96e',this);document.getElementById('bgColorPicker').value='#c9a96e'"></button>
-            <button class="color-btn" style="background:#f7e7ce;" onclick="setBg('#f7e7ce',this);document.getElementById('bgColorPicker').value='#f7e7ce'"></button>
-            <button class="color-btn" style="background:#e8e4f0;" onclick="setBg('#e8e4f0',this);document.getElementById('bgColorPicker').value='#e8e4f0'"></button>
-            <button class="color-btn" style="background:#ffffff;border:1px solid #ddd;" onclick="setBg('#ffffff',this);document.getElementById('bgColorPicker').value='#ffffff'"></button>
-            <button class="color-btn" style="background:#f0f0f0;border:1px solid #ddd;" onclick="setBg('#f0f0f0',this);document.getElementById('bgColorPicker').value='#f0f0f0'"></button>
-            <button class="color-btn" style="background:#ffe4b5;" onclick="setBg('#ffe4b5',this);document.getElementById('bgColorPicker').value='#ffe4b5'"></button>
-            <button class="color-btn" style="background:#b5d5e8;" onclick="setBg('#b5d5e8',this);document.getElementById('bgColorPicker').value='#b5d5e8'"></button>
-            <button class="color-btn" style="background:#d4b8e0;" onclick="setBg('#d4b8e0',this);document.getElementById('bgColorPicker').value='#d4b8e0'"></button>
-            <button class="color-btn" style="background:#f5c842;" onclick="setBg('#f5c842',this);document.getElementById('bgColorPicker').value='#f5c842'"></button>
-            <button class="color-btn" style="background:#e07070;" onclick="setBg('#e07070',this);document.getElementById('bgColorPicker').value='#e07070'"></button>
-            <button class="color-btn" style="background:transparent;border:1.5px dashed #ccc;font-size:9px;color:var(--muted);" onclick="setBg('transparent',this)" title="透過">透過</button>
-          </div>
-          </div>
-          <div id="bgPatternSection" style="display:none;">
-            <div class="panel-title" style="margin-top:4px;">背景パターン</div>
-            <select id="bgPatternType" style="width:100%;font-family:Jost,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;margin-bottom:10px;" onchange="drawPattern()">
-              <option value="stripe-v">縦ストライプ</option>
-              <option value="stripe-h">横ストライプ</option>
-              <option value="stripe-d">斜めストライプ</option>
-              <option value="check">チェック</option>
-              <option value="gingham">ギンガム</option>
-              <option value="argyle">アーガイル</option>
-              <option value="dot">ドット</option>
-              <option value="polka">ポルカドット</option>
-              <option value="herringbone">ヘリンボーン</option>
-              <option value="tartan">タータン</option>
-            </select>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">カラー1・2・3を選んでください</div>
-            <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">カラー1</div>
-                <input type="color" id="bgPickerCol1" value="#f7dde0" style="width:100%;height:32px;border-radius:8px;border:1px solid var(--border);cursor:pointer;padding:2px;" oninput="bgColors[0]=this.value;document.getElementById('bgSel0').style.background=this.value;document.getElementById('bgCol1').value=this.value;drawPattern()">
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">カラー2</div>
-                <input type="color" id="bgPickerCol2" value="#fffcfb" style="width:100%;height:32px;border-radius:8px;border:1px solid var(--border);cursor:pointer;padding:2px;" oninput="bgColors[1]=this.value;document.getElementById('bgSel1').style.background=this.value;document.getElementById('bgCol2').value=this.value;drawPattern()">
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">カラー3</div>
-                <input type="color" id="bgPickerCol3" value="#c8dbc6" style="width:100%;height:32px;border-radius:8px;border:1px solid var(--border);cursor:pointer;padding:2px;" oninput="bgColors[2]=this.value;document.getElementById('bgSel2').style.background=this.value;document.getElementById('bgCol3').value=this.value;drawPattern()">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px;" id="bgPaletteRow">
-              <button class="color-btn" style="background:#f7dde0;" onclick="applyBgCol('#f7dde0')"></button>
-              <button class="color-btn" style="background:#fffcfb;" onclick="applyBgCol('#fffcfb')"></button>
-              <button class="color-btn" style="background:#eaf2e9;" onclick="applyBgCol('#eaf2e9')"></button>
-              <button class="color-btn" style="background:#c8dbc6;" onclick="applyBgCol('#c8dbc6')"></button>
-              <button class="color-btn" style="background:#e8a8b0;" onclick="applyBgCol('#e8a8b0')"></button>
-              <button class="color-btn" style="background:#7d9b7a;" onclick="applyBgCol('#7d9b7a')"></button>
-              <button class="color-btn" style="background:#264653;" onclick="applyBgCol('#264653')"></button>
-              <button class="color-btn" style="background:#3b3634;" onclick="applyBgCol('#3b3634')"></button>
-              <button class="color-btn" style="background:#c9a96e;" onclick="applyBgCol('#c9a96e')"></button>
-              <button class="color-btn" style="background:#ffffff;border:1px solid #ddd;" onclick="applyBgCol('#ffffff')"></button>
-              <button class="color-btn" style="background:#f7e7ce;" onclick="applyBgCol('#f7e7ce')"></button>
-              <button class="color-btn" style="background:#ffe4b5;" onclick="applyBgCol('#ffe4b5')"></button>
-              <button class="color-btn" style="background:#b5d5e8;" onclick="applyBgCol('#b5d5e8')"></button>
-              <button class="color-btn" style="background:#d4b8e0;" onclick="applyBgCol('#d4b8e0')"></button>
-            </div>
-            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">クリックで順番にカラー1→2→3に適用</div>
-            <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;" id="bgSelectedColors">
-              <div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#f7dde0;" id="bgSel0"></div>
-              <div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#fffcfb;" id="bgSel1"></div>
-              <div style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#c8dbc6;" id="bgSel2"></div>
-              <button style="width:28px;height:28px;border-radius:6px;border:1.5px dashed var(--border);background:none;cursor:pointer;font-size:14px;color:var(--muted);" onclick="rotateBgColors()">↺</button>
-            </div>
-            <input type="hidden" id="bgCol1" value="#f7dde0">
-            <input type="hidden" id="bgCol2" value="#fffcfb">
-            <input type="hidden" id="bgCol3" value="#c8dbc6">
-            <div class="control-group" style="margin-top:8px;"><div class="control-label">パターンサイズ <span id="bgPatSizeVal">40px</span></div><input type="range" id="bgPatSize" min="10" max="120" value="40" oninput="updateVal('bgPatSizeVal',this.value+'px');drawPattern()"></div>
-            <div class="control-group"><div class="control-label">線の太さ <span id="bgPatWeightVal">4px</span></div><input type="range" id="bgPatWeight" min="1" max="30" value="4" oninput="updateVal('bgPatWeightVal',this.value+'px');drawPattern()"></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-title">書き出し</div>
-          <select class="size-select" id="exportSize" style="width:100%;margin-bottom:10px;">
-            <option value="1000">1000 × 1000 px</option>
-            <option value="2000" selected>2000 × 2000 px</option>
-            <option value="3000">3000 × 3000 px</option>
-            <option value="4000">4000 × 4000 px</option>
-          </select>
-          <button class="dl-btn" id="dlBtn" onclick="downloadPattern()" disabled>パターンをダウンロード 🌿</button>
-        </div>
       </div>
-      <div class="canvas-wrap">
-        <div class="canvas-header">
-          <div class="canvas-title">プレビュー</div>
-          <div class="tiles-row">
-            <button class="tile-btn active" onclick="setTileView(1,this)">1×1</button>
-            <button class="tile-btn" onclick="setTileView(2,this)">2×2</button>
-            <button class="tile-btn" onclick="setTileView(3,this)">3×3</button>
+
+      <!-- Right: preview + controls -->
+      <div class="right-layout">
+        <div class="preview-controls">
+          <!-- Preview -->
+          <div class="canvas-wrap">
+            <div class="canvas-header">
+              <div class="canvas-title">プレビュー</div>
+              <div class="tiles-row">
+                <button class="tile-btn active" onclick="setTileView(1,this)">1×1</button>
+                <button class="tile-btn" onclick="setTileView(2,this)">2×2</button>
+                <button class="tile-btn" onclick="setTileView(3,this)">3×3</button>
+              </div>
+            </div>
+            <div class="canvas-container" id="canvasContainer">
+              <div id="emptyState" style="text-align:center;padding:40px 20px;color:var(--muted);">
+                <div style="font-size:32px;margin-bottom:8px;">🌸</div>
+                <p style="font-size:12px;">クリップアートをアップロードしてください</p>
+              </div>
+              <canvas id="patternCanvas" style="display:none;"></canvas>
+            </div>
           </div>
-        </div>
-        <div class="canvas-container" id="canvasContainer">
-          <div class="empty-state" id="emptyState"><div class="es-icon">🌸</div><p>クリップアートを<br>アップロードしてください</p></div>
-          <canvas id="patternCanvas" style="display:none;"></canvas>
+
+          <!-- Right controls -->
+          <div class="right-ctrl">
+            <div>
+              <div class="panel-title">背景タイプ</div>
+              <div class="switch-row">
+                <button class="switch-btn active" id="bgTypeColor" onclick="setBgType('color',this)">単色</button>
+                <button class="switch-btn" id="bgTypePattern" onclick="setBgType('pattern',this)">パターン</button>
+              </div>
+              <div id="bgColorSection">
+                <input type="color" id="bgColorPicker" value="#fffcfb" oninput="setBg(this.value,null)" style="width:100%;height:36px;border-radius:8px;border:1px solid var(--border);cursor:pointer;padding:2px;margin-bottom:6px;">
+                <div class="color-grid" id="bgColorRow">
+                  <button class="color-btn active" style="background:#fffcfb;" onclick="setBg('#fffcfb',this);document.getElementById('bgColorPicker').value='#fffcfb'"></button>
+                  <button class="color-btn" style="background:#f5f0ee;" onclick="setBg('#f5f0ee',this);document.getElementById('bgColorPicker').value='#f5f0ee'"></button>
+                  <button class="color-btn" style="background:#fdf0f1;" onclick="setBg('#fdf0f1',this);document.getElementById('bgColorPicker').value='#fdf0f1'"></button>
+                  <button class="color-btn" style="background:#eaf2e9;" onclick="setBg('#eaf2e9',this);document.getElementById('bgColorPicker').value='#eaf2e9'"></button>
+                  <button class="color-btn" style="background:#c8dbc6;" onclick="setBg('#c8dbc6',this);document.getElementById('bgColorPicker').value='#c8dbc6'"></button>
+                  <button class="color-btn" style="background:#e8a8b0;" onclick="setBg('#e8a8b0',this);document.getElementById('bgColorPicker').value='#e8a8b0'"></button>
+                  <button class="color-btn" style="background:#7d9b7a;" onclick="setBg('#7d9b7a',this);document.getElementById('bgColorPicker').value='#7d9b7a'"></button>
+                  <button class="color-btn" style="background:#264653;" onclick="setBg('#264653',this);document.getElementById('bgColorPicker').value='#264653'"></button>
+                  <button class="color-btn" style="background:#3b3634;" onclick="setBg('#3b3634',this);document.getElementById('bgColorPicker').value='#3b3634'"></button>
+                  <button class="color-btn" style="background:#ffffff;border:1px solid #ddd;" onclick="setBg('#ffffff',this);document.getElementById('bgColorPicker').value='#ffffff'"></button>
+                  <button class="color-btn" style="background:transparent;border:1.5px dashed #ccc;font-size:7px;color:var(--muted);" onclick="setBg('transparent',this)" title="透過">透過</button>
+                  <button class="color-custom-sm"><input type="color" value="#ffffff" oninput="setBg(this.value,null);document.getElementById('bgColorPicker').value=this.value"></button>
+                </div>
+              </div>
+              <div id="bgPatternSection" style="display:none;">
+                <select class="pat-select" id="bgPatternType" onchange="drawPattern()">
+                  <option value="stripe-v">縦ストライプ</option>
+                  <option value="stripe-h">横ストライプ</option>
+                  <option value="stripe-d">斜めストライプ</option>
+                  <option value="check">チェック</option>
+                  <option value="gingham">ギンガム</option>
+                  <option value="argyle">アーガイル</option>
+                  <option value="dot">ドット</option>
+                  <option value="polka">ポルカドット</option>
+                  <option value="herringbone">ヘリンボーン</option>
+                  <option value="tartan">タータン</option>
+                </select>
+                <div class="color-pair"><label>カラー1</label><input type="color" id="bgCol1" value="#f7dde0" oninput="drawPattern()"></div>
+                <div class="color-pair"><label>カラー2</label><input type="color" id="bgCol2" value="#fffcfb" oninput="drawPattern()"></div>
+                <div class="color-pair"><label>カラー3</label><input type="color" id="bgCol3" value="#c8dbc6" oninput="drawPattern()"></div>
+                <div class="control-group"><div class="control-label">パターンサイズ <span id="bgPatSizeVal">40px</span></div><input type="range" id="bgPatSize" min="10" max="300" value="40" oninput="updateVal('bgPatSizeVal',this.value+'px');drawPattern()"></div>
+                <div class="control-group"><div class="control-label">線の太さ <span id="bgPatWeightVal">4px</span></div><input type="range" id="bgPatWeight" min="1" max="60" value="4" oninput="updateVal('bgPatWeightVal',this.value+'px');drawPattern()"></div>
+              </div>
+            </div>
+            <div>
+              <div class="panel-title">書き出し</div>
+              <select class="size-select" id="exportSize" style="margin-bottom:8px;">
+                <option value="1000">1000 × 1000 px</option>
+                <option value="2000" selected>2000 × 2000 px</option>
+                <option value="3000">3000 × 3000 px</option>
+                <option value="4000">4000 × 4000 px</option>
+              </select>
+              <button class="dl-btn" id="dlBtn" onclick="downloadPattern()" disabled>ダウンロード 🌿</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Tab 2: Geo -->
+  <!-- TAB 2: Geo -->
   <div class="tab-content" id="tab-geo">
-    <div class="layout">
+    <div class="main-layout">
+      <!-- Left: pattern selector + colors -->
       <div>
         <div class="panel">
           <div class="panel-title">パターンを選ぶ</div>
@@ -273,34 +238,42 @@ canvas { display: block; max-width: 100%; max-height: 500px; }
           <div class="color-pair"><label>カラー2</label><input type="color" id="geoColor2" value="#fdf8f6" oninput="drawGeo()"></div>
           <div class="color-pair"><label>カラー3</label><input type="color" id="geoColor3" value="#7d9b7a" oninput="drawGeo()"></div>
         </div>
-        <div class="panel">
-          <div class="panel-title">サイズ・太さ</div>
-          <div class="control-group"><div class="control-label">パターンサイズ <span id="geoSizeVal">60px</span></div><input type="range" id="geoSize" min="10" max="200" value="60" oninput="updateVal('geoSizeVal',this.value+'px');drawGeo()"></div>
-          <div class="control-group"><div class="control-label">線の太さ <span id="geoWeightVal">8px</span></div><input type="range" id="geoWeight" min="1" max="60" value="8" oninput="updateVal('geoWeightVal',this.value+'px');drawGeo()"></div>
-          <div class="control-group"><div class="control-label">角度 <span id="geoAngleVal">45°</span></div><input type="range" id="geoAngle" min="0" max="90" value="45" oninput="updateVal('geoAngleVal',this.value+'°');drawGeo()"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title">書き出し</div>
-          <select class="size-select" id="geoExportSize" style="width:100%;margin-bottom:10px;">
-            <option value="1000">1000 × 1000 px</option>
-            <option value="2000" selected>2000 × 2000 px</option>
-            <option value="3000">3000 × 3000 px</option>
-            <option value="4000">4000 × 4000 px</option>
-          </select>
-          <button class="dl-btn" id="geoDlBtn" onclick="downloadGeo()">パターンをダウンロード 🌿</button>
-        </div>
       </div>
-      <div class="canvas-wrap">
-        <div class="canvas-header">
-          <div class="canvas-title">プレビュー</div>
-          <div class="tiles-row">
-            <button class="tile-btn active" onclick="setGeoTile(1,this)">1×1</button>
-            <button class="tile-btn" onclick="setGeoTile(2,this)">2×2</button>
-            <button class="tile-btn" onclick="setGeoTile(3,this)">3×3</button>
+      <!-- Right: preview + controls -->
+      <div class="right-layout">
+        <div class="preview-controls">
+          <div class="canvas-wrap">
+            <div class="canvas-header">
+              <div class="canvas-title">プレビュー</div>
+              <div class="tiles-row">
+                <button class="tile-btn active" onclick="setGeoTile(1,this)">1×1</button>
+                <button class="tile-btn" onclick="setGeoTile(2,this)">2×2</button>
+                <button class="tile-btn" onclick="setGeoTile(3,this)">3×3</button>
+              </div>
+            </div>
+            <div class="canvas-container" id="geoContainer">
+              <canvas id="geoCanvas"></canvas>
+            </div>
           </div>
-        </div>
-        <div class="canvas-container" id="geoContainer">
-          <canvas id="geoCanvas"></canvas>
+          <!-- Right controls -->
+          <div class="right-ctrl">
+            <div>
+              <div class="panel-title">サイズ・太さ</div>
+              <div class="control-group"><div class="control-label">パターンサイズ <span id="geoSizeVal">60px</span></div><input type="range" id="geoSize" min="10" max="300" value="60" oninput="updateVal('geoSizeVal',this.value+'px');drawGeo()"></div>
+              <div class="control-group"><div class="control-label">線の太さ <span id="geoWeightVal">8px</span></div><input type="range" id="geoWeight" min="1" max="80" value="8" oninput="updateVal('geoWeightVal',this.value+'px');drawGeo()"></div>
+              <div class="control-group"><div class="control-label">角度 <span id="geoAngleVal">45°</span></div><input type="range" id="geoAngle" min="0" max="90" value="45" oninput="updateVal('geoAngleVal',this.value+'°');drawGeo()"></div>
+            </div>
+            <div>
+              <div class="panel-title">書き出し</div>
+              <select class="size-select" id="geoExportSize" style="margin-bottom:8px;">
+                <option value="1000">1000 × 1000 px</option>
+                <option value="2000" selected>2000 × 2000 px</option>
+                <option value="3000">3000 × 3000 px</option>
+                <option value="4000">4000 × 4000 px</option>
+              </select>
+              <button class="dl-btn" onclick="downloadGeo()">ダウンロード 🌿</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -308,126 +281,225 @@ canvas { display: block; max-width: 100%; max-height: 500px; }
 </div>
 
 <script>
-// ===== TAB SWITCH =====
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('tab-' + id).classList.add('active');
-  if (id === 'geo') { setTimeout(drawGeo, 50); }
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='geo')setTimeout(drawGeo,50);
+}
+function updateVal(id,val){document.getElementById(id).textContent=val;}
+
+// ===== シームレスパターン描画（完全版）=====
+// キャンバスのクリッピング領域に対してシームレスになるよう描画
+// patternを使ったCanvasの繰り返しパターンを活用
+
+function makeGeoPattern(ctx, pattern, s, lw, col1, col2, col3, angle) {
+  // 最小繰り返し単位のオフスクリーンcanvasを作成
+  const a = angle * Math.PI / 180;
+  let tw, th;
+
+  // パターンごとの繰り返し単位サイズ
+  switch(pattern) {
+    case 'stripe-v': tw=s; th=s; break;
+    case 'stripe-h': tw=s; th=s; break;
+    case 'stripe-d': tw=s; th=s; break;
+    case 'stripe-multi': tw=s*4; th=s; break;
+    case 'check': tw=s*2; th=s*2; break;
+    case 'gingham': tw=s*2; th=s*2; break;
+    case 'argyle': tw=s*2; th=s*2; break;
+    case 'diamond': tw=s*2; th=s*2; break;
+    case 'dot': tw=s; th=s; break;
+    case 'polka': tw=s*2; th=s*2; break;
+    case 'herringbone': tw=s; th=s; break;
+    case 'zigzag': tw=s*2; th=s; break;
+    case 'tartan': tw=s*2; th=s*2; break;
+    default: tw=s; th=s;
+  }
+
+  const oc = document.createElement('canvas');
+  oc.width = tw; oc.height = th;
+  const oc2 = oc.getContext('2d');
+  oc2.fillStyle = col2;
+  oc2.fillRect(0,0,tw,th);
+
+  switch(pattern) {
+    case 'stripe-v':
+      oc2.fillStyle=col1; oc2.fillRect(0,0,lw,th);
+      break;
+    case 'stripe-h':
+      oc2.fillStyle=col1; oc2.fillRect(0,0,tw,lw);
+      break;
+    case 'stripe-d':{
+      // 斜めストライプ：45度固定でシームレスな正方形タイル
+      // タイルサイズをsにして対角線で分割
+      oc2.fillStyle=col1;
+      // 上三角
+      oc2.beginPath();oc2.moveTo(0,0);oc2.lineTo(lw,0);oc2.lineTo(tw,th-lw);oc2.lineTo(tw,th);oc2.lineTo(tw-lw,th);oc2.lineTo(0,lw);oc2.closePath();oc2.fill();
+      // 右上と左下の端（シームレス用）
+      oc2.beginPath();oc2.moveTo(tw-lw,0);oc2.lineTo(tw,0);oc2.lineTo(tw,lw);oc2.closePath();oc2.fill();
+      oc2.beginPath();oc2.moveTo(0,th-lw);oc2.lineTo(lw,th);oc2.lineTo(0,th);oc2.closePath();oc2.fill();
+      break;
+    }
+    case 'stripe-multi':{
+      const colors=[col1,col2,col3,col2];
+      let x=0;
+      colors.forEach(c=>{oc2.fillStyle=c;oc2.fillRect(x,0,lw,th);x+=lw;});
+      break;
+    }
+    case 'check':
+      oc2.fillStyle=col1; oc2.fillRect(0,0,s,s);
+      oc2.fillStyle=col1; oc2.fillRect(s,s,s,s);
+      break;
+    case 'gingham':{
+      oc2.fillStyle=col1; oc2.fillRect(0,0,s,s);
+      oc2.fillStyle=col1; oc2.fillRect(s,s,s,s);
+      oc2.globalAlpha=0.4;
+      oc2.fillStyle=col1; oc2.fillRect(s,0,s,th);
+      oc2.fillStyle=col1; oc2.fillRect(0,s,tw,s);
+      oc2.globalAlpha=1; break;
+    }
+    case 'argyle':{
+      // アーガイル：繰り返し単位はダイヤ2個分（tw=s*2, th=s*2）
+      // 中央ダイヤ（col1）
+      oc2.fillStyle=col1;
+      oc2.beginPath();oc2.moveTo(s,0);oc2.lineTo(tw,s);oc2.lineTo(s,th);oc2.lineTo(0,s);oc2.closePath();oc2.fill();
+      // 四隅のダイヤ（col3）- シームレスのため分割して4隅に
+      oc2.fillStyle=col3;
+      // 上左（1/4ダイヤ）
+      oc2.beginPath();oc2.moveTo(0,0);oc2.lineTo(s,0);oc2.lineTo(0,s);oc2.closePath();oc2.fill();
+      // 上右（1/4ダイヤ）
+      oc2.beginPath();oc2.moveTo(tw,0);oc2.lineTo(s,0);oc2.lineTo(tw,s);oc2.closePath();oc2.fill();
+      // 下左（1/4ダイヤ）
+      oc2.beginPath();oc2.moveTo(0,th);oc2.lineTo(s,th);oc2.lineTo(0,s);oc2.closePath();oc2.fill();
+      // 下右（1/4ダイヤ）
+      oc2.beginPath();oc2.moveTo(tw,th);oc2.lineTo(s,th);oc2.lineTo(tw,s);oc2.closePath();oc2.fill();
+      // 枠線
+      const slw=Math.max(1,lw/3);
+      oc2.strokeStyle=col2;oc2.lineWidth=slw;
+      oc2.beginPath();oc2.moveTo(s,0);oc2.lineTo(tw,s);oc2.lineTo(s,th);oc2.lineTo(0,s);oc2.closePath();oc2.stroke();
+      // 対角クロス線（アーガイルの特徴）
+      oc2.strokeStyle=col2;oc2.lineWidth=slw;
+      oc2.beginPath();oc2.moveTo(0,0);oc2.lineTo(tw,th);oc2.stroke();
+      oc2.beginPath();oc2.moveTo(tw,0);oc2.lineTo(0,th);oc2.stroke();
+      break;
+    }
+    case 'diamond':{
+      oc2.strokeStyle=col1; oc2.lineWidth=lw;
+      oc2.beginPath(); oc2.moveTo(tw/2,0); oc2.lineTo(tw,th/2); oc2.lineTo(tw/2,th); oc2.lineTo(0,th/2); oc2.closePath(); oc2.stroke();
+      break;
+    }
+    case 'dot':{
+      oc2.beginPath(); oc2.arc(tw/2,th/2,lw*1.5,0,Math.PI*2); oc2.fillStyle=col1; oc2.fill(); break;
+    }
+    case 'polka':{
+      const r=s*0.35;
+      oc2.beginPath(); oc2.arc(s/2,s/2,r,0,Math.PI*2); oc2.fillStyle=col1; oc2.fill();
+      oc2.beginPath(); oc2.arc(s+s/2,s+s/2,r,0,Math.PI*2); oc2.fillStyle=col1; oc2.fill();
+      // 端の半円（シームレスのため）
+      oc2.beginPath(); oc2.arc(0,0,r,0,Math.PI*2); oc2.fill();
+      oc2.beginPath(); oc2.arc(tw,0,r,0,Math.PI*2); oc2.fill();
+      oc2.beginPath(); oc2.arc(0,th,r,0,Math.PI*2); oc2.fill();
+      oc2.beginPath(); oc2.arc(tw,th,r,0,Math.PI*2); oc2.fill();
+      break;
+    }
+    case 'herringbone':{
+      oc2.strokeStyle=col1; oc2.lineWidth=lw;
+      oc2.beginPath(); oc2.moveTo(0,th); oc2.lineTo(tw/2,0); oc2.stroke();
+      oc2.beginPath(); oc2.moveTo(tw/2,th); oc2.lineTo(tw,0); oc2.stroke();
+      break;
+    }
+    case 'zigzag':{
+      oc2.strokeStyle=col1; oc2.lineWidth=lw;
+      oc2.beginPath(); oc2.moveTo(0,th/2); oc2.lineTo(s/2,0); oc2.lineTo(s,th/2); oc2.lineTo(s+s/2,0); oc2.lineTo(s*2,th/2); oc2.stroke();
+      break;
+    }
+    case 'tartan':{
+      oc2.globalAlpha=0.85;
+      oc2.fillStyle=col1; oc2.fillRect(0,0,lw*2,th); oc2.fillRect(s,0,lw*2,th);
+      oc2.fillStyle=col3; oc2.fillRect(s/2,0,lw,th); oc2.fillRect(s+s/2,0,lw,th);
+      oc2.fillStyle=col1; oc2.fillRect(0,0,tw,lw*2); oc2.fillRect(0,s,tw,lw*2);
+      oc2.fillStyle=col3; oc2.fillRect(0,s/2,tw,lw); oc2.fillRect(0,s+s/2,tw,lw);
+      oc2.globalAlpha=1; break;
+    }
+  }
+
+  return ctx.createPattern(oc, 'repeat');
 }
 
 // ===== CLIPART TAB =====
-let cliparts = [], bgColor = '#fffcfb', currentPreset = 'grid', tileView = 1;
-let patternCanvas = document.getElementById('patternCanvas');
-let ctx = patternCanvas.getContext('2d');
-let offCanvas = document.createElement('canvas'), offCtx = offCanvas.getContext('2d');
-const SEED = 42;
+let cliparts=[], bgColor='#fffcfb', bgType='color', currentPreset='grid', tileView=1;
+const patternCanvas=document.getElementById('patternCanvas');
+const pCtx=patternCanvas.getContext('2d');
+const SEED=42;
+function seededRandom(seed){let s=seed;return function(){s=(s*16807+0)%2147483647;return(s-1)/2147483646;};}
 
-function seededRandom(seed) { let s = seed; return function() { s=(s*16807+0)%2147483647; return(s-1)/2147483646; }; }
+document.getElementById('fileInput').addEventListener('change',e=>{loadFiles(Array.from(e.target.files));e.target.value='';});
+const uz=document.getElementById('uploadZone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag-over');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag-over'));
+uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag-over');loadFiles(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')));});
 
-document.getElementById('fileInput').addEventListener('change', e => { loadFiles(Array.from(e.target.files)); e.target.value=''; });
-const uz = document.getElementById('uploadZone');
-uz.addEventListener('dragover', e => { e.preventDefault(); uz.style.borderColor='var(--sage)'; });
-uz.addEventListener('dragleave', () => uz.style.borderColor='');
-uz.addEventListener('drop', e => { e.preventDefault(); uz.style.borderColor=''; loadFiles(Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'))); });
+function loadFiles(files){files.forEach(f=>{const img=new Image(),url=URL.createObjectURL(f);img.onload=()=>{cliparts.push({img,url});renderThumbs();drawPattern();};img.src=url;});}
 
-function loadFiles(files) { files.forEach(f => { const img=new Image(), url=URL.createObjectURL(f); img.onload=()=>{ cliparts.push({img,url,name:f.name}); renderThumbs(); drawPattern(); }; img.src=url; }); }
-
-function renderThumbs() {
-  const grid = document.getElementById('clipartGrid'); grid.innerHTML='';
-  cliparts.forEach((c,i) => {
-    const div=document.createElement('div'); div.className='clipart-thumb';
-    const img=document.createElement('img'); img.src=c.url;
-    const btn=document.createElement('button'); btn.className='remove'; btn.innerHTML='×';
-    btn.onclick=e=>{ e.stopPropagation(); cliparts.splice(i,1); renderThumbs(); drawPattern(); };
-    div.appendChild(img); div.appendChild(btn); grid.appendChild(div);
+function renderThumbs(){
+  const grid=document.getElementById('clipartGrid');grid.innerHTML='';
+  cliparts.forEach((c,i)=>{
+    const div=document.createElement('div');div.className='clipart-thumb';
+    const img=document.createElement('img');img.src=c.url;
+    const rm=document.createElement('button');rm.className='remove';rm.innerHTML='×';
+    rm.onclick=e=>{e.stopPropagation();cliparts.splice(i,1);renderThumbs();drawPattern();};
+    div.appendChild(img);div.appendChild(rm);grid.appendChild(div);
   });
   document.getElementById('emptyState').style.display=cliparts.length?'none':'block';
   patternCanvas.style.display=cliparts.length?'block':'none';
   document.getElementById('dlBtn').disabled=!cliparts.length;
 }
 
-function setPreset(preset, btn) {
+function setPreset(preset,btn){
   currentPreset=preset;
-  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-  const p={grid:{size:120,gap:20,rot:0,rand:0},brick:{size:110,gap:16,rot:0,rand:0},diagonal:{size:100,gap:24,rot:15,rand:0},scatter:{size:90,gap:10,rot:0,rand:35},dense:{size:80,gap:4,rot:0,rand:10},sparse:{size:140,gap:60,rot:0,rand:20}}[preset];
-  document.getElementById('itemSize').value=p.size; document.getElementById('itemGap').value=p.gap;
-  document.getElementById('itemRot').value=p.rot; document.getElementById('itemRand').value=p.rand;
-  updateVal('sizeVal',p.size+'px'); updateVal('gapVal',p.gap+'px'); updateVal('rotVal',p.rot+'°'); updateVal('randVal',p.rand+'°');
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  const p={grid:{size:300,gap:20,rot:0,rand:0},brick:{size:280,gap:16,rot:0,rand:0},diagonal:{size:260,gap:24,rot:15,rand:0},scatter:{size:240,gap:10,rot:0,rand:35},dense:{size:200,gap:4,rot:0,rand:10},sparse:{size:360,gap:80,rot:0,rand:20}}[preset];
+  document.getElementById('itemSize').value=p.size;document.getElementById('itemGap').value=p.gap;
+  document.getElementById('itemRot').value=p.rot;document.getElementById('itemRand').value=p.rand;
+  updateVal('sizeVal',p.size+'px');updateVal('gapVal',p.gap+'px');updateVal('rotVal',p.rot+'°');updateVal('randVal',p.rand+'°');
   drawPattern();
 }
 
-let bgType = 'color';
-let bgColors = ['#f7dde0', '#fffcfb', '#c8dbc6'];
-let bgColorSlot = 0; // which slot to set next (cycles 0→1→2→0)
-
-function setBgCol(slot, color, btn) {
-  bgColors[bgColorSlot] = color;
-  document.getElementById('bgCol1').value = bgColors[0];
-  document.getElementById('bgCol2').value = bgColors[1];
-  document.getElementById('bgCol3').value = bgColors[2];
-  document.getElementById('bgSel0').style.background = bgColors[0];
-  document.getElementById('bgSel1').style.background = bgColors[1];
-  document.getElementById('bgSel2').style.background = bgColors[2];
-  bgColorSlot = (bgColorSlot + 1) % 3;
-  // highlight active slot
-  document.querySelectorAll('#bgSelectedColors div').forEach((d,i) => {
-    d.style.outline = i === bgColorSlot ? '2px solid var(--sage)' : 'none';
-  });
+function setBgType(type,btn){
+  bgType=type;
+  document.getElementById('bgTypeColor').classList.toggle('active',type==='color');
+  document.getElementById('bgTypePattern').classList.toggle('active',type==='pattern');
+  document.getElementById('bgColorSection').style.display=type==='color'?'block':'none';
+  document.getElementById('bgPatternSection').style.display=type==='pattern'?'block':'none';
   drawPattern();
 }
 
-function applyBgCol(color) {
-  bgColors[bgColorSlot] = color;
-  document.getElementById('bgCol1').value = bgColors[0];
-  document.getElementById('bgCol2').value = bgColors[1];
-  document.getElementById('bgCol3').value = bgColors[2];
-  document.getElementById('bgSel0').style.background = bgColors[0];
-  document.getElementById('bgSel1').style.background = bgColors[1];
-  document.getElementById('bgSel2').style.background = bgColors[2];
-  document.getElementById('bgPickerCol1').value = bgColors[0];
-  document.getElementById('bgPickerCol2').value = bgColors[1];
-  document.getElementById('bgPickerCol3').value = bgColors[2];
-  bgColorSlot = (bgColorSlot + 1) % 3;
-  document.querySelectorAll('#bgSelectedColors div').forEach((d,i) => {
-    d.style.outline = i === bgColorSlot ? '2px solid var(--sage)' : 'none';
-  });
+function setBg(color,btn){
+  bgColor=color;
+  document.querySelectorAll('#bgColorRow .color-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
   drawPattern();
 }
-function rotateBgColors() {
-  bgColors = [bgColors[2], bgColors[0], bgColors[1]];
-  document.getElementById('bgCol1').value = bgColors[0];
-  document.getElementById('bgCol2').value = bgColors[1];
-  document.getElementById('bgCol3').value = bgColors[2];
-  document.getElementById('bgSel0').style.background = bgColors[0];
-  document.getElementById('bgSel1').style.background = bgColors[1];
-  document.getElementById('bgSel2').style.background = bgColors[2];
-  drawPattern();
-}
-function setBgType(type, btn) {
-  bgType = type;
-  document.getElementById('bgTypeColor').classList.toggle('active', type==='color');
-  document.getElementById('bgTypePattern').classList.toggle('active', type==='pattern');
-  document.getElementById('bgColorSection').style.display = type==='color' ? 'block' : 'none';
-  document.getElementById('bgPatternSection').style.display = type==='pattern' ? 'block' : 'none';
-  drawPattern();
-}
-function setBg(color, btn) { bgColor=color; document.querySelectorAll('#bgColorRow .color-btn').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active'); drawPattern(); }
-function setTileView(n, btn) { tileView=n; document.querySelectorAll('#tab-clipart .tile-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderTilePreview(); }
-function updateVal(id, val) { document.getElementById(id).textContent=val; }
 
-function drawPattern() {
-  if (!cliparts.length) return;
-  const size=parseInt(document.getElementById('itemSize').value), gap=parseInt(document.getElementById('itemGap').value);
-  const rot=parseInt(document.getElementById('itemRot').value)*Math.PI/180, rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
+function setTileView(n,btn){
+  tileView=n;
+  document.querySelectorAll('#tab-clipart .tile-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTilePreview();
+}
+
+function buildTile(size, gap, rot, rand) {
   const step=size+gap;
   const n=Math.min(cliparts.length,4);
-  // 1枚→1x1, 2枚→2x1, 3-4枚→2x2 のタイルで全アイテムを順番に配置
   const tileCols=n<=1?1:2, tileRows=n<=2?1:2;
   const tileW=step*tileCols, tileH=step*tileRows;
-  offCanvas.width=tileW; offCanvas.height=tileH;
-  offCtx.clearRect(0,0,tileW,tileH);
+
+  const tile=document.createElement('canvas');
+  tile.width=tileW; tile.height=tileH;
+  const tc=tile.getContext('2d');
+
+  // 背景：CanvasのcreatePatternで完全シームレス
   if(bgType==='pattern'){
     const bgPat=document.getElementById('bgPatternType').value;
     const bgC1=document.getElementById('bgCol1').value;
@@ -435,316 +507,178 @@ function drawPattern() {
     const bgC3=document.getElementById('bgCol3').value;
     const bgS=parseInt(document.getElementById('bgPatSize').value);
     const bgW=parseInt(document.getElementById('bgPatWeight').value);
-    drawGeoToCtx(offCtx,bgPat,Math.max(tileW,tileH),bgC1,bgC2,bgC3,bgS,bgW,45);
-  } else if(bgColor!=='transparent'){offCtx.fillStyle=bgColor; offCtx.fillRect(0,0,tileW,tileH);}
-  const rng=seededRandom(SEED);
-  let idx=0;
-  for(let row=0;row<tileRows;row++) for(let col=0;col<tileCols;col++){
-    if(idx>=n) break;
-    const c=cliparts[idx]; idx++;
-    let x=col*step+step/2, y=row*step+step/2;
-    if(currentPreset==='brick'&&row%2!==0)x+=step/2;
-    if(currentPreset==='diagonal')x+=row*(step/2);
-    const r=rot+(rng()*2-1)*rand;
-    offCtx.save(); offCtx.translate(x,y); offCtx.rotate(r);
-    offCtx.drawImage(c.img,-size/2,-size/2,size,size); offCtx.restore();
+    const pat=makeGeoPattern(tc,bgPat,bgS,bgW,bgC1,bgC2,bgC3,45);
+    if(pat){tc.fillStyle=pat;tc.fillRect(0,0,tileW,tileH);}
+  }else if(bgColor!=='transparent'){
+    tc.fillStyle=bgColor;tc.fillRect(0,0,tileW,tileH);
   }
+
+  // クリップアートをラップアラウンドで配置
+  const rng=seededRandom(SEED);
+  const positions=[];
+  let idx=0;
+  for(let row=0;row<tileRows;row++){
+    for(let col=0;col<tileCols;col++){
+      if(idx>=n)break;
+      let cx=col*step+step/2, cy=row*step+step/2;
+      if(currentPreset==='brick'&&row%2!==0)cx+=step/2;
+      if(currentPreset==='diagonal')cx+=row*(step/2);
+      const r=rot+(rng()*2-1)*rand;
+      positions.push({img:cliparts[idx].img,cx,cy,r});
+      idx++;
+    }
+  }
+
+  positions.forEach(({img,cx,cy,r})=>{
+    for(let dy=-1;dy<=1;dy++){
+      for(let dx=-1;dx<=1;dx++){
+        const ox=cx+dx*tileW, oy=cy+dy*tileH;
+        if(ox+size/2>=0&&ox-size/2<=tileW&&oy+size/2>=0&&oy-size/2<=tileH){
+          tc.save();tc.translate(ox,oy);tc.rotate(r);
+          tc.drawImage(img,-size/2,-size/2,size,size);
+          tc.restore();
+        }
+      }
+    }
+  });
+
+  return tile;
+}
+
+function drawPattern(){
+  if(!cliparts.length)return;
+  const size=parseInt(document.getElementById('itemSize').value);
+  const gap=parseInt(document.getElementById('itemGap').value);
+  const rot=parseInt(document.getElementById('itemRot').value)*Math.PI/180;
+  const rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
+  window._cachedTile=buildTile(size,gap,rot,rand);
   renderTilePreview();
 }
 
-function renderTilePreview() {
-  if (!cliparts.length) return;
-  const n=tileView, previewSize=Math.min(460,document.getElementById('canvasContainer').clientWidth-44);
-  patternCanvas.width=previewSize; patternCanvas.height=previewSize; ctx.clearRect(0,0,previewSize,previewSize);
-  if(bgColor!=='transparent'){ctx.fillStyle=bgColor; ctx.fillRect(0,0,previewSize,previewSize);}
-  const tw=offCanvas.width, th=offCanvas.height, scale=previewSize/(tw*n);
-  for(let row=0;row<n;row++) for(let col=0;col<n;col++) ctx.drawImage(offCanvas,col*tw*scale,row*th*scale,tw*scale,th*scale);
+function renderTilePreview(){
+  if(!cliparts.length||!window._cachedTile)return;
+  const tile=window._cachedTile;
+  const n=tileView;
+  const previewSize=Math.min(480,document.getElementById('canvasContainer').clientWidth-40);
+  patternCanvas.width=previewSize;patternCanvas.height=previewSize;
+  const tw=tile.width,th=tile.height;
+  const scale=previewSize/(Math.max(tw,th)*n);
+  const sw=tw*scale,sh=th*scale;
+  const cols=Math.ceil(previewSize/sw)+1,rows=Math.ceil(previewSize/sh)+1;
+  pCtx.clearRect(0,0,previewSize,previewSize);
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++)
+    pCtx.drawImage(tile,col*sw,row*sh,sw,sh);
 }
 
-function downloadPattern() {
-  if (!cliparts.length) return;
+function downloadPattern(){
+  if(!cliparts.length)return;
   const exportSize=parseInt(document.getElementById('exportSize').value);
   const size=parseInt(document.getElementById('itemSize').value);
   const gap=parseInt(document.getElementById('itemGap').value);
   const rot=parseInt(document.getElementById('itemRot').value)*Math.PI/180;
   const rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
-
-  // 書き出し用にフルサイズでタイルを描画
-  const n=Math.min(cliparts.length,4);
-  const tileCols=n<=1?1:2, tileRows=n<=2?1:2;
-  const step=size+gap;
-  const tileW=step*tileCols, tileH=step*tileRows;
-
-  const expTile=document.createElement('canvas');
-  expTile.width=tileW; expTile.height=tileH;
-  const expTileCtx=expTile.getContext('2d');
-
-  if(bgType==='pattern'){
-    const bgPat=document.getElementById('bgPatternType').value;
-    const bgC1=document.getElementById('bgCol1').value;
-    const bgC2=document.getElementById('bgCol2').value;
-    const bgC3=document.getElementById('bgCol3').value;
-    const bgS=parseInt(document.getElementById('bgPatSize').value);
-    const bgW=parseInt(document.getElementById('bgPatWeight').value);
-    drawGeoToCtx(expTileCtx,bgPat,Math.max(tileW,tileH),bgC1,bgC2,bgC3,bgS,bgW,45);
-  } else if(bgColor!=='transparent'){
-    expTileCtx.fillStyle=bgColor;
-    expTileCtx.fillRect(0,0,tileW,tileH);
-  }
-
-  const rng=seededRandom(SEED);
-  let idx=0;
-  for(let row=0;row<tileRows;row++) for(let col=0;col<tileCols;col++){
-    if(idx>=n) break;
-    const c=cliparts[idx]; idx++;
-    let x=col*step+step/2, y=row*step+step/2;
-    if(currentPreset==='brick'&&row%2!==0)x+=step/2;
-    if(currentPreset==='diagonal')x+=row*(step/2);
-    const r=rot+(rng()*2-1)*rand;
-    expTileCtx.save(); expTileCtx.translate(x,y); expTileCtx.rotate(r);
-    expTileCtx.drawImage(c.img,-size/2,-size/2,size,size); expTileCtx.restore();
-  }
-
-  // タイルを敷き詰めて書き出し
+  const tile=buildTile(size,gap,rot,rand);
   const expCanvas=document.createElement('canvas');
-  expCanvas.width=exportSize; expCanvas.height=exportSize;
-  const expCtx=expCanvas.getContext('2d');
-  const tilesX=Math.ceil(exportSize/tileW)+1, tilesY=Math.ceil(exportSize/tileH)+1;
-  for(let row=0;row<tilesY;row++) for(let col=0;col<tilesX;col++){
-    expCtx.drawImage(expTile, col*tileW, row*tileH, tileW, tileH);
-  }
-  const a=document.createElement('a'); a.href=expCanvas.toDataURL('image/png'); a.download=`clipart-pattern-${exportSize}px.png`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  expCanvas.width=exportSize;expCanvas.height=exportSize;
+  const ec=expCanvas.getContext('2d');
+  const tw=tile.width,th=tile.height;
+  const cols=Math.ceil(exportSize/tw)+1,rows=Math.ceil(exportSize/th)+1;
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++)
+    ec.drawImage(tile,col*tw,row*th,tw,th);
+  const a=document.createElement('a');a.href=expCanvas.toDataURL('image/png');
+  a.download=`seamless-pattern-${exportSize}px.png`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
-window.addEventListener('resize', ()=>{ if(cliparts.length)renderTilePreview(); });
+window.addEventListener('resize',()=>{if(cliparts.length)renderTilePreview();});
 
 // ===== GEO TAB =====
-const geoPatterns = [
-  { id:'stripe-v',    label:'縦ストライプ' },
-  { id:'stripe-h',    label:'横ストライプ' },
-  { id:'stripe-d',    label:'斜めストライプ' },
-  { id:'stripe-multi',label:'マルチストライプ' },
-  { id:'check',       label:'チェック' },
-  { id:'gingham',     label:'ギンガム' },
-  { id:'argyle',      label:'アーガイル' },
-  { id:'diamond',     label:'ダイヤモンド' },
-  { id:'dot',         label:'ドット' },
-  { id:'polka',       label:'ポルカドット' },
-  { id:'herringbone', label:'ヘリンボーン' },
-  { id:'zigzag',      label:'ジグザグ' },
-  { id:'tartan',      label:'タータン' },
+const geoPatterns=[
+  {id:'stripe-v',label:'縦ストライプ'},{id:'stripe-h',label:'横ストライプ'},{id:'stripe-d',label:'斜めストライプ'},
+  {id:'stripe-multi',label:'マルチストライプ'},{id:'check',label:'チェック'},{id:'gingham',label:'ギンガム'},
+  {id:'argyle',label:'アーガイル'},{id:'diamond',label:'ダイヤモンド'},{id:'dot',label:'ドット'},
+  {id:'polka',label:'ポルカドット'},{id:'herringbone',label:'ヘリンボーン'},{id:'zigzag',label:'ジグザグ'},
+  {id:'tartan',label:'タータン'},
 ];
+let currentGeo='stripe-v',geoTileView=1;
+const geoCanvas=document.getElementById('geoCanvas');
+const geoCtx=geoCanvas.getContext('2d');
 
-let currentGeo = 'stripe-v', geoTileView = 1;
-let geoCanvas = document.getElementById('geoCanvas');
-let geoCtx = geoCanvas.getContext('2d');
-let geoOff = document.createElement('canvas'), geoOffCtx = geoOff.getContext('2d');
-
-function initGeoGrid() {
-  const grid = document.getElementById('geoGrid');
-  geoPatterns.forEach(p => {
-    const wrap = document.createElement('div');
-    const btn = document.createElement('button');
-    btn.className = 'geo-btn' + (p.id===currentGeo?' active':'');
-    btn.dataset.id = p.id;
-    const c = document.createElement('canvas'); c.width=60; c.height=60;
-    drawGeoToCtx(c.getContext('2d'), p.id, 60, '#e8a8b0', '#fdf8f6', '#7d9b7a', 20, 4, 45);
+function initGeoGrid(){
+  const grid=document.getElementById('geoGrid');
+  geoPatterns.forEach(p=>{
+    const wrap=document.createElement('div');
+    const btn=document.createElement('button');
+    btn.className='geo-btn'+(p.id===currentGeo?' active':'');
+    const c=document.createElement('canvas');c.width=60;c.height=60;
+    const pat=makeGeoPattern(c.getContext('2d'),p.id,20,4,'#e8a8b0','#fdf8f6','#7d9b7a',45);
+    if(pat){const cc=c.getContext('2d');cc.fillStyle=pat;cc.fillRect(0,0,60,60);}
     btn.appendChild(c);
-    btn.onclick = () => {
-      document.querySelectorAll('.geo-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active'); currentGeo=p.id; drawGeo();
-    };
-    const label = document.createElement('div'); label.className='geo-label'; label.textContent=p.label;
-    wrap.appendChild(btn); wrap.appendChild(label); grid.appendChild(wrap);
+    btn.onclick=()=>{document.querySelectorAll('.geo-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentGeo=p.id;drawGeo();};
+    const label=document.createElement('div');label.className='geo-label';label.textContent=p.label;
+    wrap.appendChild(btn);wrap.appendChild(label);grid.appendChild(wrap);
   });
 }
 
-function drawGeoToCtx(c, pattern, size, col1, col2, col3, patSize, weight, angle) {
-  const w=size, h=size;
-  c.clearRect(0,0,w,h);
-  c.fillStyle=col2; c.fillRect(0,0,w,h);
-  const s=patSize, lw=Math.max(1,weight), a=angle*Math.PI/180;
-
-  switch(pattern) {
-    case 'stripe-v':
-      for(let x=0;x<w+s;x+=s){ c.fillStyle=col1; c.fillRect(x,0,lw,h); }
-      break;
-    case 'stripe-h':
-      for(let y=0;y<h+s;y+=s){ c.fillStyle=col1; c.fillRect(0,y,w,lw); }
-      break;
-    case 'stripe-d': {
-      c.save(); c.strokeStyle=col1; c.lineWidth=lw;
-      const ext=Math.max(w,h)*2;
-      for(let i=-ext;i<ext;i+=s){
-        c.beginPath(); c.moveTo(i,0); c.lineTo(i+ext*Math.tan(a),ext); c.stroke();
-      }
-      c.restore(); break;
-    }
-    case 'stripe-multi': {
-      const colors=[col1,col2,col3,col2];
-      let x=0; const sw=lw;
-      while(x<w+s*4){ colors.forEach(col=>{ c.fillStyle=col; c.fillRect(x,0,sw,h); x+=sw; }); }
-      break;
-    }
-    case 'check':
-      for(let row=0;row<Math.ceil(h/s)+1;row++) for(let col=0;col<Math.ceil(w/s)+1;col++){
-        c.fillStyle=(row+col)%2===0?col1:col2; c.fillRect(col*s,row*s,s,s);
-      }
-      break;
-    case 'gingham': {
-      for(let row=0;row<Math.ceil(h/s)+1;row++) for(let col=0;col<Math.ceil(w/s)+1;col++){
-        c.fillStyle=(row+col)%2===0?col1:col2; c.fillRect(col*s,row*s,s,s);
-      }
-      c.globalAlpha=0.35;
-      for(let x=0;x<w+s;x+=s){ c.fillStyle=col1; c.fillRect(x,0,s,h); }
-      for(let y=0;y<h+s;y+=s){ c.fillStyle=col1; c.fillRect(0,y,w,s); }
-      c.globalAlpha=1; break;
-    }
-    case 'argyle': {
-      const dw=s*2, dh=s*2;
-      for(let row=-1;row<Math.ceil(h/dh)+2;row++) for(let col=-1;col<Math.ceil(w/dw)+2;col++){
-        const cx=col*dw+(row%2)*dw/2, cy=row*dh/2;
-        c.beginPath(); c.moveTo(cx,cy-dh/2); c.lineTo(cx+dw/2,cy); c.lineTo(cx,cy+dh/2); c.lineTo(cx-dw/2,cy); c.closePath();
-        c.fillStyle=(row+col)%2===0?col1:col3; c.fill();
-      }
-      c.strokeStyle=col2; c.lineWidth=Math.max(1,lw/2);
-      for(let row=-1;row<Math.ceil(h/dh)+2;row++) for(let col=-1;col<Math.ceil(w/dw)+2;col++){
-        const cx=col*dw+(row%2)*dw/2, cy=row*dh/2;
-        c.beginPath(); c.moveTo(cx,cy-dh/2); c.lineTo(cx+dw/2,cy); c.lineTo(cx,cy+dh/2); c.lineTo(cx-dw/2,cy); c.closePath(); c.stroke();
-      }
-      break;
-    }
-    case 'diamond': {
-      const dw=s, dh=s;
-      c.strokeStyle=col1; c.lineWidth=lw;
-      for(let row=-1;row<Math.ceil(h/dh)+2;row++) for(let col=-1;col<Math.ceil(w/dw)+2;col++){
-        const cx=col*dw+(row%2)*dw/2, cy=row*dh/2;
-        c.beginPath(); c.moveTo(cx,cy-dh/2); c.lineTo(cx+dw/2,cy); c.lineTo(cx,cy+dh/2); c.lineTo(cx-dw/2,cy); c.closePath(); c.stroke();
-      }
-      break;
-    }
-    case 'dot': {
-      const r=lw*1.5;
-      for(let row=0;row<Math.ceil(h/s)+2;row++) for(let col=0;col<Math.ceil(w/s)+2;col++){
-        c.beginPath(); c.arc(col*s,row*s,r,0,Math.PI*2); c.fillStyle=col1; c.fill();
-      }
-      break;
-    }
-    case 'polka': {
-      const r=s*0.3;
-      for(let row=0;row<Math.ceil(h/s)+2;row++) for(let col=0;col<Math.ceil(w/s)+2;col++){
-        const ox=(row%2)*s/2;
-        c.beginPath(); c.arc(col*s+ox,row*s,r,0,Math.PI*2); c.fillStyle=col1; c.fill();
-      }
-      break;
-    }
-    case 'herringbone': {
-      c.strokeStyle=col1; c.lineWidth=lw;
-      const hs=s/2;
-      for(let row=-2;row<Math.ceil(h/hs)+4;row++) for(let col=-2;col<Math.ceil(w/hs)+4;col++){
-        const x=col*hs, y=row*hs;
-        if((row+col)%2===0){
-          c.beginPath(); c.moveTo(x,y); c.lineTo(x+hs,y+hs); c.stroke();
-        } else {
-          c.beginPath(); c.moveTo(x+hs,y); c.lineTo(x,y+hs); c.stroke();
-        }
-      }
-      break;
-    }
-    case 'tartan': {
-      // Tartan: layered colored stripes horizontal + vertical with blend
-      const ts = s;
-      // Base color
-      c.fillStyle = col2; c.fillRect(0, 0, w, h);
-      // Vertical stripes col1
-      c.globalAlpha = 0.85;
-      for (let x = 0; x < w + ts; x += ts) {
-        c.fillStyle = col1; c.fillRect(x, 0, lw * 2, h);
-        c.fillStyle = col3; c.fillRect(x + ts / 2, 0, lw, h);
-      }
-      // Horizontal stripes col1 with multiply-like blend
-      for (let y = 0; y < h + ts; y += ts) {
-        c.fillStyle = col1; c.fillRect(0, y, w, lw * 2);
-        c.fillStyle = col3; c.fillRect(0, y + ts / 2, w, lw);
-      }
-      c.globalAlpha = 1;
-      break;
-    }
-    case 'zigzag': {
-      c.strokeStyle=col1; c.lineWidth=lw; c.beginPath();
-      const zs=s, za=s/2;
-      for(let row=-1;row<Math.ceil(h/za)+2;row++){
-        const y=row*za;
-        c.beginPath();
-        for(let col=-1;col<Math.ceil(w/zs)+2;col++){
-          const x=col*zs;
-          if(col===-1) c.moveTo(x,y+(row%2===0?0:za));
-          else c.lineTo(x,y+(col%2===0?(row%2===0?0:za):(row%2===0?za:0)));
-        }
-        c.stroke();
-      }
-      break;
-    }
-  }
-}
-
-function drawGeo() {
+function buildGeoTile(){
   const size=parseInt(document.getElementById('geoSize').value);
   const weight=parseInt(document.getElementById('geoWeight').value);
   const angle=parseInt(document.getElementById('geoAngle').value);
   const col1=document.getElementById('geoColor1').value;
   const col2=document.getElementById('geoColor2').value;
   const col3=document.getElementById('geoColor3').value;
+  const tileSize=size*2;
+  const tile=document.createElement('canvas');tile.width=tileSize;tile.height=tileSize;
+  const tc=tile.getContext('2d');
+  const pat=makeGeoPattern(tc,currentGeo,size,weight,col1,col2,col3,angle);
+  if(pat){tc.fillStyle=pat;tc.fillRect(0,0,tileSize,tileSize);}
+  return tile;
+}
 
-  // Draw tile
-  geoOff.width=size*2; geoOff.height=size*2;
-  drawGeoToCtx(geoOffCtx, currentGeo, size*2, col1, col2, col3, size, weight, angle);
-
-  // Render preview
-  const previewSize=Math.min(460,document.getElementById('geoContainer').clientWidth-44);
-  geoCanvas.width=previewSize; geoCanvas.height=previewSize;
-  const n=geoTileView, tw=geoOff.width, th=geoOff.height, scale=previewSize/(tw*n);
+function drawGeo(){
+  const tile=buildGeoTile();
+  window._cachedGeoTile=tile;
+  const previewSize=Math.min(480,document.getElementById('geoContainer').clientWidth-40);
+  geoCanvas.width=previewSize;geoCanvas.height=previewSize;
+  const n=geoTileView,tw=tile.width,th=tile.height;
+  const scale=previewSize/(Math.max(tw,th)*n);
+  const sw=tw*scale,sh=th*scale;
   geoCtx.clearRect(0,0,previewSize,previewSize);
-  for(let row=0;row<Math.ceil(previewSize/th/scale)+2;row++)
-    for(let col=0;col<Math.ceil(previewSize/tw/scale)+2;col++)
-      geoCtx.drawImage(geoOff,col*tw*scale,row*th*scale,tw*scale,th*scale);
-
-  // Update thumbnails
-  document.querySelectorAll('.geo-btn canvas').forEach((c,i) => {
-    drawGeoToCtx(c.getContext('2d'), geoPatterns[i].id, 60, col1, col2, col3, 20, 4, angle);
+  const cols=Math.ceil(previewSize/sw)+1,rows=Math.ceil(previewSize/sh)+1;
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++)
+    geoCtx.drawImage(tile,col*sw,row*sh,sw,sh);
+  // サムネ更新
+  document.querySelectorAll('.geo-btn canvas').forEach((c,i)=>{
+    const pat=makeGeoPattern(c.getContext('2d'),geoPatterns[i].id,20,4,
+      document.getElementById('geoColor1').value,
+      document.getElementById('geoColor2').value,
+      document.getElementById('geoColor3').value,45);
+    if(pat){const cc=c.getContext('2d');cc.clearRect(0,0,60,60);cc.fillStyle=pat;cc.fillRect(0,0,60,60);}
   });
 }
 
-function setGeoTile(n, btn) {
+function setGeoTile(n,btn){
   geoTileView=n;
   document.querySelectorAll('#tab-geo .tile-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); drawGeo();
+  btn.classList.add('active');drawGeo();
 }
 
-function downloadGeo() {
+function downloadGeo(){
   const exportSize=parseInt(document.getElementById('geoExportSize').value);
-  const size=parseInt(document.getElementById('geoSize').value);
-  const weight=parseInt(document.getElementById('geoWeight').value);
-  const angle=parseInt(document.getElementById('geoAngle').value);
-  const col1=document.getElementById('geoColor1').value;
-  const col2=document.getElementById('geoColor2').value;
-  const col3=document.getElementById('geoColor3').value;
-  const expCanvas=document.createElement('canvas'); expCanvas.width=exportSize; expCanvas.height=exportSize;
-  const expCtx=expCanvas.getContext('2d');
-  const tileC=document.createElement('canvas'); tileC.width=size*2; tileC.height=size*2;
-  drawGeoToCtx(tileC.getContext('2d'), currentGeo, size*2, col1, col2, col3, size, weight, angle);
-  const tw=tileC.width, th=tileC.height;
-  for(let row=0;row<Math.ceil(exportSize/th)+2;row++)
-    for(let col=0;col<Math.ceil(exportSize/tw)+2;col++)
-      expCtx.drawImage(tileC,col*tw,row*th,tw,th);
-  const a=document.createElement('a'); a.href=expCanvas.toDataURL('image/png');
+  const tile=buildGeoTile();
+  const expCanvas=document.createElement('canvas');expCanvas.width=exportSize;expCanvas.height=exportSize;
+  const ec=expCanvas.getContext('2d');
+  const tw=tile.width,th=tile.height;
+  const cols=Math.ceil(exportSize/tw)+1,rows=Math.ceil(exportSize/th)+1;
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++)
+    ec.drawImage(tile,col*tw,row*th,tw,th);
+  const a=document.createElement('a');a.href=expCanvas.toDataURL('image/png');
   a.download=`${currentGeo}-pattern-${exportSize}px.png`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
 initGeoGrid();
-setTimeout(drawGeo, 100);
+setTimeout(drawGeo,100);
 </script>
 </body>
 </html>
