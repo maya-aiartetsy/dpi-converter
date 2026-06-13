@@ -578,15 +578,18 @@ function downloadPattern(){
   const rot=parseInt(document.getElementById('itemRot').value)*Math.PI/180;
   const rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
   const tile=buildTile(size,gap,rot,rand);
-  const expCanvas=document.createElement('canvas');
-  expCanvas.width=exportSize;expCanvas.height=exportSize;
-  const ec=expCanvas.getContext('2d');
   const tw=tile.width,th=tile.height;
-  const cols=Math.ceil(exportSize/tw)+1,rows=Math.ceil(exportSize/th)+1;
+  // タイルが完全に並ぶサイズに調整
+  const cols=Math.max(1,Math.round(exportSize/tw));
+  const rows=Math.max(1,Math.round(exportSize/th));
+  const actualW=tw*cols, actualH=th*rows;
+  const expCanvas=document.createElement('canvas');
+  expCanvas.width=actualW;expCanvas.height=actualH;
+  const ec=expCanvas.getContext('2d');
   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++)
     ec.drawImage(tile,col*tw,row*th,tw,th);
   const a=document.createElement('a');a.href=expCanvas.toDataURL('image/png');
-  a.download=`seamless-pattern-${exportSize}px.png`;
+  a.download=`seamless-pattern-${actualW}x${actualH}px.png`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
@@ -666,14 +669,16 @@ function setGeoTile(n,btn){
 function downloadGeo(){
   const exportSize=parseInt(document.getElementById('geoExportSize').value);
   const tile=buildGeoTile();
-  const expCanvas=document.createElement('canvas');expCanvas.width=exportSize;expCanvas.height=exportSize;
-  const ec=expCanvas.getContext('2d');
   const tw=tile.width,th=tile.height;
-  const cols=Math.ceil(exportSize/tw)+1,rows=Math.ceil(exportSize/th)+1;
+  const cols=Math.max(1,Math.round(exportSize/tw));
+  const rows=Math.max(1,Math.round(exportSize/th));
+  const actualW=tw*cols, actualH=th*rows;
+  const expCanvas=document.createElement('canvas');expCanvas.width=actualW;expCanvas.height=actualH;
+  const ec=expCanvas.getContext('2d');
   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++)
     ec.drawImage(tile,col*tw,row*th,tw,th);
   const a=document.createElement('a');a.href=expCanvas.toDataURL('image/png');
-  a.download=`${currentGeo}-pattern-${exportSize}px.png`;
+  a.download=`${currentGeo}-pattern-${actualW}x${actualH}px.png`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
