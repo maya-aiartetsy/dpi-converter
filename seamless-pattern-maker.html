@@ -579,9 +579,10 @@ function downloadPattern(){
   const rand=parseInt(document.getElementById('itemRand').value)*Math.PI/180;
   const tile=buildTile(size,gap,rot,rand);
   const tw=tile.width,th=tile.height;
-  // タイルが完全に並ぶサイズに調整
-  const cols=Math.max(1,Math.round(exportSize/tw));
-  const rows=Math.max(1,Math.round(exportSize/th));
+  // exportSizeをカバーするのに必要なタイル数（切り上げ）
+  const cols=Math.ceil(exportSize/tw);
+  const rows=Math.ceil(exportSize/th);
+  // 実際のサイズはタイルの倍数（シームレス保証）
   const actualW=tw*cols, actualH=th*rows;
   const expCanvas=document.createElement('canvas');
   expCanvas.width=actualW;expCanvas.height=actualH;
