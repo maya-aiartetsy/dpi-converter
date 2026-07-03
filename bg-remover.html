@@ -238,9 +238,14 @@ h1{
     </div>
   </div>
 
-  <div class="opt-row">
+  <div class="opt-row" style="flex-wrap:wrap">
     <label><input type="checkbox" id="alpha-toggle" checked> 🎯 半透明のムラを補正する</label>
     <span class="opt-hint">グレーなどが透けるのを軽減</span>
+    <div style="flex-basis:100%;display:flex;align-items:center;gap:8px;margin-top:8px;">
+      <label style="font-size:12.5px;color:var(--muted);white-space:nowrap;">補正の強さ</label>
+      <input type="range" id="alpha-strength" min="0" max="100" value="40" style="flex:1;accent-color:var(--sage);">
+      <span style="font-size:12.5px;color:var(--ink);min-width:32px;" id="alpha-strength-val">40</span>
+    </div>
   </div>
 
   <div class="opt-row">
@@ -539,6 +544,9 @@ document.getElementById('upscale-toggle').addEventListener('change', e => {
 document.getElementById('square-toggle').addEventListener('change', e => {
   document.getElementById('square-size-row').style.display = e.target.checked ? 'flex' : 'none';
 });
+document.getElementById('alpha-strength').addEventListener('input', e => {
+  document.getElementById('alpha-strength-val').textContent = e.target.value;
+});
 dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('over'); });
 dropEl.addEventListener('dragleave', () => dropEl.classList.remove('over'));
 dropEl.addEventListener('drop', e => { e.preventDefault(); dropEl.classList.remove('over'); addFiles(e.dataTransfer.files); });
@@ -667,9 +675,13 @@ async function processOne(i){
       setBadge(i, 'proc', 'AI処理中...');
     }
     const blob = await removeBackground(inputFile, IMGLY_CONFIG);
-    let finalBlob = document.getElementById('alpha-toggle').checked
-      ? await boostAlpha(blob, 25, 220)
-      : blob;
+    let finalBlob = blob;
+    if(document.getElementById('alpha-toggle').checked){
+      const strength = parseInt(document.getElementById('alpha-strength').value) || 0;
+      const lo = Math.round(strength * 1.27);
+      const hi = 255 - lo;
+      finalBlob = await boostAlpha(blob, lo, hi);
+    }
     finalBlob = document.getElementById('trim-toggle').checked
       ? await trimTransparentMargins(finalBlob, 0.02)
       : finalBlob;
