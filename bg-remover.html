@@ -243,6 +243,16 @@ h1{
     <span class="opt-hint">透明な余白を輪郭ギリギリまでカット</span>
   </div>
 
+  <div class="opt-row" style="flex-wrap:wrap">
+    <label><input type="checkbox" id="square-toggle"> ⬜ 正方形キャンバスで書き出す</label>
+    <span class="opt-hint">中央配置・余白は透明</span>
+    <div id="square-size-row" style="display:none;flex-basis:100%;display:flex;align-items:center;gap:8px;margin-top:8px;">
+      <label style="font-size:12.5px;color:var(--muted);white-space:nowrap;">キャンバスサイズ</label>
+      <input type="number" id="square-size" value="3000" min="500" max="8000" step="100" style="width:90px;font-family:'Jost',sans-serif;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:20px;background:var(--white);color:var(--ink);">
+      <span style="font-size:12.5px;color:var(--muted);">px（正方形）</span>
+    </div>
+  </div>
+
   <div id="file-list" class="file-list"></div>
 
   <div id="summary" class="summary" style="display:none">
@@ -419,6 +429,26 @@ function sharpenFile(file, amount){
   });
 }
 
+function padToSquare(blob, sizePx){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(sizePx / img.width, sizePx / img.height);
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = sizePx; c.height = sizePx;
+      const cx = c.getContext('2d');
+      cx.imageSmoothingEnabled = true;
+      cx.imageSmoothingQuality = 'high';
+      const dx = Math.round((sizePx - w) / 2), dy = Math.round((sizePx - h) / 2);
+      cx.drawImage(img, dx, dy, w, h);
+      c.toBlob(b => resolve(b), 'image/png');
+    };
+    img.onerror = () => resolve(blob);
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
 let files = [];
 const modelStatus = document.getElementById('model-status');
 const modelText = document.getElementById('model-text');
@@ -459,6 +489,9 @@ setTimeout(() => {
 document.getElementById('file-input').addEventListener('change', e => addFiles(e.target.files));
 document.getElementById('upscale-toggle').addEventListener('change', e => {
   document.getElementById('export-size-row').style.display = e.target.checked ? 'flex' : 'none';
+});
+document.getElementById('square-toggle').addEventListener('change', e => {
+  document.getElementById('square-size-row').style.display = e.target.checked ? 'flex' : 'none';
 });
 dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('over'); });
 dropEl.addEventListener('dragleave', () => dropEl.classList.remove('over'));
@@ -594,6 +627,10 @@ async function processOne(i){
     if(document.getElementById('upscale-toggle').checked){
       const targetPx = parseInt(document.getElementById('export-size').value) || 3000;
       finalBlob = await resizeToLongestSide(finalBlob, targetPx);
+    }
+    if(document.getElementById('square-toggle').checked){
+      const squarePx = parseInt(document.getElementById('square-size').value) || 3000;
+      finalBlob = await padToSquare(finalBlob, squarePx);
     }
     item.result = URL.createObjectURL(finalBlob);
     item.status = 'done';
