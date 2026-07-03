@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Background Remover — AI背景透過ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#f5f0ee;
+  --surface:#fdf8f6;
+  --sage:#7d9b7a;
+  --sage-light:#c8dbc6;
+  --sage-pale:#eaf2e9;
+  --pink:#e8a8b0;
+  --pink-light:#f7dde0;
+  --pink-pale:#fdf0f1;
+  --ink:#3b3634;
+  --muted:#9a9390;
+  --border:#e2d9d6;
+  --white:#fffcfb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Jost',sans-serif;
+  font-weight:400;
+  background:var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+  line-height:1.6;
+}
+body::before{
+  content:'';position:fixed;top:-120px;right:-120px;
+  width:420px;height:420px;
+  background:radial-gradient(circle,#f2c8cd55 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;bottom:-80px;left:-80px;
+  width:340px;height:340px;
+  background:radial-gradient(circle,#c8dbc655 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.wrap{max-width:660px;margin:0 auto;padding:0 24px 80px;position:relative;z-index:1}
+header{padding:52px 0 36px}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.logo-dot{width:10px;height:10px;border-radius:50%;background:var(--pink);box-shadow:16px 0 0 var(--sage-light)}
+.eyebrow{font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted)}
+h1{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-weight:500;
+  font-size:40px;
+  color:var(--ink);
+  margin-bottom:8px;
+}
+.subtitle{font-size:14.5px;color:var(--muted);max-width:440px}
+
+.model-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px 20px;
+  margin-bottom:20px;
+  display:flex;align-items:center;gap:14px;
+  transition:background 0.3s,border-color 0.3s;
+}
+.model-card.ready{background:var(--sage-pale);border-color:var(--sage-light)}
+.spinner{
+  width:18px;height:18px;flex-shrink:0;
+  border:2.5px solid var(--pink-light);
+  border-top-color:var(--pink);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.model-text{font-size:13.5px;color:var(--ink)}
+.model-bar-wrap{height:5px;background:var(--pink-pale);border-radius:3px;overflow:hidden;margin-top:8px}
+.model-bar{height:100%;background:linear-gradient(90deg,var(--pink),var(--sage));width:0%;transition:width 0.2s}
+
+#drop{
+  border:1.5px dashed var(--pink);
+  border-radius:18px;
+  padding:2.4rem 1.5rem;
+  text-align:center;
+  cursor:pointer;
+  background:var(--pink-pale);
+  position:relative;
+  transition:all 0.2s;
+}
+#drop.over{background:var(--pink-light);border-color:var(--pink)}
+#drop.disabled{opacity:0.5;pointer-events:none}
+#drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:32px;margin-bottom:10px}
+.drop-title{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-size:19px;
+  color:var(--ink);
+  margin-bottom:4px;
+}
+.drop-sub{font-size:12.5px;color:var(--muted)}
+
+.file-list{display:flex;flex-direction:column;gap:10px;margin:20px 0}
+.file-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 14px;
+  position:relative;overflow:hidden;
+}
+.thumb-wrap{
+  width:52px;height:52px;flex-shrink:0;border-radius:10px;overflow:hidden;
+  background:repeating-conic-gradient(#e9e2df 0% 25%,#fff 0% 50%) 0 0/12px 12px;
+  border:1px solid var(--border);cursor:pointer;
+}
+.thumb-wrap img{width:100%;height:100%;object-fit:contain}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.file-status{font-size:11.5px;padding:4px 11px;border-radius:20px;white-space:nowrap;flex-shrink:0;font-weight:500}
+.status-wait{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.status-proc{background:#fdf1d3;color:#96702a}
+.status-done{background:var(--sage-pale);color:var(--sage)}
+.status-err{background:#fbe2e2;color:#b1504f}
+.prog-bar{position:absolute;bottom:0;left:0;height:2.5px;background:linear-gradient(90deg,var(--pink),var(--sage));transition:width 0.3s}
+.edit-btn,.dl-btn{
+  font-size:11.5px;padding:5px 11px;white-space:nowrap;cursor:pointer;
+  border-radius:20px;background:var(--white);border:1px solid var(--border);
+  color:var(--ink);flex-shrink:0;
+}
+.edit-btn:hover,.dl-btn:hover{background:var(--pink-pale);border-color:var(--pink)}
+
+.actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.btn-main{
+  flex:1;min-width:180px;padding:13px;font-size:14.5px;font-weight:500;
+  border-radius:24px;cursor:pointer;
+  background:var(--sage);color:#fff;border:none;
+  letter-spacing:0.02em;
+  transition:opacity 0.15s,transform 0.1s;
+}
+.btn-main:hover{opacity:0.92}
+.btn-main:active{transform:scale(0.98)}
+.btn-main:disabled{opacity:0.4;cursor:not-allowed}
+.btn-sec{
+  padding:13px 20px;font-size:13.5px;border-radius:24px;cursor:pointer;
+  background:transparent;border:1px solid var(--border);color:var(--ink);
+}
+.btn-sec:hover{background:var(--surface)}
+
+.summary{display:flex;gap:10px;margin-top:20px}
+.stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;text-align:center}
+.stat-n{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--ink)}
+.stat-l{font-size:10.5px;color:var(--muted);margin-top:2px;letter-spacing:0.05em;text-transform:uppercase}
+
+.note{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.7}
+
+.overlay{
+  position:fixed;inset:0;background:rgba(59,54,52,0.55);
+  display:none;align-items:center;justify-content:center;z-index:100;
+  padding:20px;backdrop-filter:blur(2px);
+}
+.overlay.show{display:flex}
+.editor{
+  background:var(--surface);border-radius:20px;
+  max-width:560px;width:100%;max-height:92vh;overflow:auto;
+  padding:24px;
+}
+.editor-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.editor-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px}
+.editor-close{cursor:pointer;font-size:22px;color:var(--muted);line-height:1;background:none;border:none}
+.canvas-stage{
+  background:repeating-conic-gradient(#e9e2df 0% 25%,#fff 0% 50%) 0 0/16px 16px;
+  border-radius:12px;overflow:hidden;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  touch-action:none;
+}
+.canvas-stage canvas{max-width:100%;display:block;cursor:crosshair}
+.editor-tools{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.mode-btn{
+  padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;
+  border:1px solid var(--border);background:var(--white);color:var(--ink);
+}
+.mode-btn.active.mode-restore{background:var(--sage-pale);border-color:var(--sage);color:var(--sage)}
+.mode-btn.active.mode-erase{background:var(--pink-pale);border-color:var(--pink);color:#b1504f}
+.brush-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.brush-row input[type=range]{flex:1;accent-color:var(--sage)}
+.editor-actions{display:flex;gap:8px;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo-row"><span class="logo-dot"></span><span class="eyebrow">Digital Product Tools</span></div>
+    <h1>AI Background Remover</h1>
+    <p class="subtitle">画像をドロップするだけで背景を透過。仕上がりが気になる部分は、あとから指でなぞって直せます。完全無料・画像はどこにも送信されません。</p>
+  </header>
+
+  <div class="model-card" id="model-status">
+    <div class="spinner" id="model-spinner"></div>
+    <div style="flex:1">
+      <div class="model-text" id="model-text">AIモデルを読み込み中...（初回のみ、数十秒かかります）</div>
+      <div class="model-bar-wrap"><div class="model-bar" id="model-bar"></div></div>
+    </div>
+  </div>
+
+  <div id="drop" class="disabled">
+    <input type="file" accept="image/png,image/jpeg,image/webp" multiple id="file-input">
+    <div class="drop-icon">🌿</div>
+    <div class="drop-title">画像をここにドロップ</div>
+    <div class="drop-sub">PNG / JPG / WebP · 複数ファイル対応</div>
+  </div>
+
+  <div id="file-list" class="file-list"></div>
+
+  <div id="summary" class="summary" style="display:none">
+    <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n" id="s-done">0</div><div class="stat-l">Done</div></div>
+    <div class="stat"><div class="stat-n" id="s-err">0</div><div class="stat-l">Error</div></div>
+  </div>
+
+  <div class="actions" id="action-bar" style="display:none">
+    <button class="btn-main" id="btn-go">✦ AI背景除去を開始</button>
+    <button class="btn-sec" id="btn-clear">クリア</button>
+  </div>
+
+  <p class="note">
+    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。処理後、サムネイルをクリックすると細部を手直しできます。
+  </p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="editor">
+    <div class="editor-head">
+      <span class="editor-title">仕上がりを整える</span>
+      <button class="editor-close" id="editor-close">×</button>
+    </div>
+    <div class="canvas-stage">
+      <canvas id="edit-canvas"></canvas>
+    </div>
+    <div class="editor-tools">
+      <button class="mode-btn mode-restore active" id="mode-restore" data-mode="restore">🌿 復元（消えすぎを戻す）</button>
+      <button class="mode-btn mode-erase" id="mode-erase" data-mode="erase">🩷 消去（消し残しを消す）</button>
+    </div>
+    <div class="brush-row">
+      <span>ブラシサイズ</span>
+      <input type="range" id="brush-size" min="4" max="80" value="24">
+      <span id="brush-size-val">24px</span>
+    </div>
+    <div class="editor-actions">
+      <button class="btn-main" id="editor-save">この内容で保存</button>
+      <button class="btn-sec" id="editor-undo">元に戻す</button>
+      <button class="btn-sec" id="editor-reset">最初からやり直す</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { removeBackground, preload } from "https://esm.sh/@imgly/background-removal@1.5.5";
+
+let files = [];
+const modelStatus = document.getElementById('model-status');
+const modelText = document.getElementById('model-text');
+const modelBar = document.getElementById('model-bar');
+const modelSpinner = document.getElementById('model-spinner');
+const dropEl = document.getElementById('drop');
+const btnGo = document.getElementById('btn-go');
+let modelReady = false;
+
+const IMGLY_CONFIG = {
+  publicPath: "https://staticimgly.com/@imgly/background-removal-data/1.5.5/dist/",
+  progress: (key, current, total) => {
+    const pct = total ? Math.round((current/total)*100) : 0;
+    modelBar.style.width = pct + '%';
+    modelText.textContent = 'AIモデルをダウンロード中... ' + pct + '%';
+  }
+};
+
+async function initModel(){
+  try{
+    await preload(IMGLY_CONFIG);
+    modelReady = true;
+    modelStatus.classList.add('ready');
+    modelSpinner.style.display = 'none';
+    modelText.textContent = '✓ AIモデルの準備が完了しました';
+    modelBar.style.width = '100%';
+    dropEl.classList.remove('disabled');
+  } catch(e){
+    modelText.textContent = 'モデルの読み込みに失敗しました。ページを再読み込みするか、通信環境を確認してください。';
+    console.error(e);
+  }
+}
+initModel();
+setTimeout(() => {
+  if(!modelReady) modelText.textContent += '　※回線が遅い場合は数分かかることがあります。';
+}, 30000);
+
+document.getElementById('file-input').addEventListener('change', e => addFiles(e.target.files));
+dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('over'); });
+dropEl.addEventListener('dragleave', () => dropEl.classList.remove('over'));
+dropEl.addEventListener('drop', e => { e.preventDefault(); dropEl.classList.remove('over'); addFiles(e.dataTransfer.files); });
+
+function addFiles(fl){
+  const imgs = [...fl].filter(f => /\.(png|jpe?g|webp)$/i.test(f.name));
+  if(!imgs.length) return;
+  imgs.forEach(f => {
+    if(files.find(x => x.name === f.name && x.size === f.size)) return;
+    files.push({file:f, name:f.name, size:f.size, status:'wait', url:null, result:null, edited:false});
+  });
+  renderList();
+  document.getElementById('action-bar').style.display = '';
+  document.getElementById('summary').style.display = '';
+  updateSummary();
+}
+
+function renderList(){
+  const list = document.getElementById('file-list');
+  list.innerHTML = '';
+  files.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'file-row';
+    row.id = 'row-' + i;
+    const sc = {wait:'status-wait',proc:'status-proc',done:'status-done',err:'status-err'}[item.status];
+    const sl = {wait:'待機中',proc:'AI処理中...',done: item.edited ? '完了・調整済み' : '完了',err:'エラー'}[item.status];
+    const kb = Math.round(item.size/1024);
+    row.innerHTML = `
+      <div class="thumb-wrap" data-i="${i}"><img id="th-${i}" src="" alt=""></div>
+      <div class="file-info">
+        <div class="file-name">${item.name}</div>
+        <div class="file-meta">${kb} KB</div>
+      </div>
+      <span class="file-status ${sc}" id="badge-${i}">${sl}</span>
+      ${item.result ? `<button class="edit-btn" data-i="${i}">✎ 修正</button><button class="dl-btn" data-i="${i}">↓ DL</button>` : ''}
+      <div class="prog-bar" id="prog-${i}" style="width:${item.status==='done'?100:0}%"></div>
+    `;
+    list.appendChild(row);
+    const th = document.getElementById('th-' + i);
+    const src = item.result || item.url;
+    if(src){ th.src = src; }
+    else {
+      const r = new FileReader();
+      r.onload = e => { item.url = e.target.result; const t = document.getElementById('th-'+i); if(t) t.src = e.target.result; };
+      r.readAsDataURL(item.file);
+    }
+  });
+  list.querySelectorAll('.dl-btn').forEach(b => b.addEventListener('click', () => dlOne(parseInt(b.dataset.i))));
+  list.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEditor(parseInt(b.dataset.i))));
+  list.querySelectorAll('.thumb-wrap').forEach(t => t.addEventListener('click', () => {
+    const i = parseInt(t.dataset.i);
+    if(files[i].result) openEditor(i);
+  }));
+  updateSummary();
+}
+
+function updateSummary(){
+  document.getElementById('s-total').textContent = files.length;
+  document.getElementById('s-done').textContent = files.filter(f => f.status==='done').length;
+  document.getElementById('s-err').textContent = files.filter(f => f.status==='err').length;
+}
+
+function setBadge(i, status, label){
+  const el = document.getElementById('badge-' + i);
+  if(!el) return;
+  el.className = 'file-status ' + {wait:'status-wait',proc:'status-proc',done:'status-done',err:'status-err'}[status];
+  el.textContent = label;
+}
+
+btnGo.addEventListener('click', processAll);
+
+async function processAll(){
+  if(!modelReady){ alert('AIモデルの読み込み中です。少し待ってから試してください。'); return; }
+  btnGo.disabled = true;
+  btnGo.textContent = '処理中...';
+  for(let i=0; i<files.length; i++){
+    if(files[i].status === 'done') continue;
+    files[i].status = 'proc';
+    setBadge(i, 'proc', 'AI処理中...');
+    animProg(i);
+    await processOne(i);
+    const bar = document.getElementById('prog-'+i);
+    if(bar) bar.style.width = '100%';
+    setBadge(i, files[i].status, files[i].status==='done' ? '完了' : 'エラー');
+    updateSummary();
+    renderList();
+  }
+  btnGo.disabled = false;
+  btnGo.textContent = '✓ 完了 — 再処理';
+  if(files.filter(f => f.status==='done').length > 1 && !document.getElementById('zip-btn')){
+    const zb = document.createElement('button');
+    zb.className = 'btn-sec';
+    zb.id = 'zip-btn';
+    zb.textContent = '📦 ZIPでまとめてDL';
+    zb.addEventListener('click', dlZip);
+    document.getElementById('action-bar').appendChild(zb);
+  }
+}
+
+function animProg(i){
+  let w = 0;
+  const id = setInterval(() => {
+    const bar = document.getElementById('prog-'+i);
+    if(!bar || files[i].status !== 'proc'){ clearInterval(id); return; }
+    w = Math.min(w + Math.random()*6, 90);
+    bar.style.width = w + '%';
+  }, 150);
+}
+
+async function processOne(i){
+  const item = files[i];
+  try{
+    const blob = await removeBackground(item.file, IMGLY_CONFIG);
+    item.result = URL.createObjectURL(blob);
+    item.status = 'done';
+  } catch(e){
+    console.error(e);
+    item.status = 'err';
+  }
+}
+
+function dlOne(i){
+  const a = document.createElement('a');
+  a.href = files[i].result;
+  a.download = files[i].name.replace(/\.(png|jpe?g|webp)$/i, '_nobg.png');
+  a.click();
+}
+
+async function dlZip(){
+  const zip = new window.JSZip();
+  for(const f of files.filter(f => f.status==='done')){
+    const resp = await fetch(f.result);
+    const blob = await resp.blob();
+    zip.file(f.name.replace(/\.(png|jpe?g|webp)$/i, '_nobg.png'), blob);
+  }
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nobg_images.zip';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  files = [];
+  document.getElementById('file-list').innerHTML = '';
+  document.getElementById('summary').style.display = 'none';
+  document.getElementById('action-bar').style.display = 'none';
+  btnGo.disabled = false;
+  btnGo.textContent = '✦ AI背景除去を開始';
+  const zb = document.getElementById('zip-btn');
+  if(zb) zb.remove();
+});
+
+const overlay = document.getElementById('overlay');
+const editCanvas = document.getElementById('edit-canvas');
+const eCtx = editCanvas.getContext('2d');
+let editIndex = null;
+let originalImg = null;
+let history = [];
+let mode = 'restore';
+let drawing = false;
+let brushSize = 24;
+
+document.getElementById('brush-size').addEventListener('input', e => {
+  brushSize = parseInt(e.target.value);
+  document.getElementById('brush-size-val').textContent = brushSize + 'px';
+});
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+
+async function openEditor(i){
+  editIndex = i;
+  const item = files[i];
+  overlay.classList.add('show');
+
+  const [resultImg, srcImg] = await Promise.all([loadImage(item.result), loadImage(item.url)]);
+  editCanvas.width = resultImg.width;
+  editCanvas.height = resultImg.height;
+  eCtx.clearRect(0,0,editCanvas.width,editCanvas.height);
+  eCtx.drawImage(resultImg, 0, 0);
+
+  originalImg = srcImg;
+  history = [eCtx.getImageData(0,0,editCanvas.width,editCanvas.height)];
+
+  const stageWidth = Math.min(500, resultImg.width);
+  editCanvas.style.width = stageWidth + 'px';
+  editCanvas.style.height = (stageWidth * resultImg.height / resultImg.width) + 'px';
+}
+
+function loadImage(src){
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.src = src;
+  });
+}
+
+document.getElementById('editor-close').addEventListener('click', () => overlay.classList.remove('show'));
+overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('show'); });
+
+function canvasPos(e){
+  const rect = editCanvas.getBoundingClientRect();
+  const scaleX = editCanvas.width / rect.width;
+  const scaleY = editCanvas.height / rect.height;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function paintAt(x, y){
+  const r = brushSize / 2;
+  if(mode === 'erase'){
+    eCtx.save();
+    eCtx.globalCompositeOperation = 'destination-out';
+    eCtx.beginPath();
+    eCtx.arc(x, y, r, 0, Math.PI*2);
+    eCtx.fill();
+    eCtx.restore();
+  } else {
+    eCtx.save();
+    eCtx.beginPath();
+    eCtx.arc(x, y, r, 0, Math.PI*2);
+    eCtx.clip();
+    eCtx.drawImage(originalImg, 0, 0, editCanvas.width, editCanvas.height);
+    eCtx.restore();
+  }
+}
+
+function startDraw(e){
+  e.preventDefault();
+  drawing = true;
+  const p = canvasPos(e);
+  paintAt(p.x, p.y);
+}
+function moveDraw(e){
+  if(!drawing) return;
+  e.preventDefault();
+  const p = canvasPos(e);
+  paintAt(p.x, p.y);
+}
+function endDraw(){
+  if(!drawing) return;
+  drawing = false;
+  history.push(eCtx.getImageData(0,0,editCanvas.width,editCanvas.height));
+  if(history.length > 25) history.shift();
+}
+
+editCanvas.addEventListener('mousedown', startDraw);
+editCanvas.addEventListener('mousemove', moveDraw);
+window.addEventListener('mouseup', endDraw);
+editCanvas.addEventListener('touchstart', startDraw, {passive:false});
+editCanvas.addEventListener('touchmove', moveDraw, {passive:false});
+editCanvas.addEventListener('touchend', endDraw);
+
+document.getElementById('editor-undo').addEventListener('click', () => {
+  if(history.length <= 1) return;
+  history.pop();
+  eCtx.putImageData(history[history.length-1], 0, 0);
+});
+
+document.getElementById('editor-reset').addEventListener('click', async () => {
+  const resultImg = await loadImage(files[editIndex].result);
+  eCtx.clearRect(0,0,editCanvas.width,editCanvas.height);
+  eCtx.drawImage(resultImg, 0, 0);
+  history = [eCtx.getImageData(0,0,editCanvas.width,editCanvas.height)];
+});
+
+document.getElementById('editor-save').addEventListener('click', () => {
+  const dataUrl = editCanvas.toDataURL('image/png');
+  files[editIndex].result = dataUrl;
+  files[editIndex].edited = true;
+  overlay.classList.remove('show');
+  renderList();
+});
+</script>
+</body>
+</html>
