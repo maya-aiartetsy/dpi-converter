@@ -336,6 +336,12 @@ function renderList(){
       <div class="prog-bar" id="prog-${i}" style="width:${item.status==='done'?100:0}%"></div>
     `;
     list.appendChild(row);
+    if(item.status === 'err' && item.errorMsg){
+      const errLine = document.createElement('div');
+      errLine.style.cssText = 'font-size:11px;color:#b1504f;padding:0 14px 8px;margin-top:-6px;word-break:break-all;';
+      errLine.textContent = 'エラー詳細: ' + item.errorMsg;
+      list.appendChild(errLine);
+    }
     const th = document.getElementById('th-' + i);
     const src = item.result || item.url;
     if(src){ th.src = src; }
@@ -416,6 +422,7 @@ async function processOne(i){
   } catch(e){
     console.error(e);
     item.status = 'err';
+    item.errorMsg = (e && e.message) ? e.message : String(e);
   }
 }
 
