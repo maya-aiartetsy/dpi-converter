@@ -239,6 +239,11 @@ h1{
   </div>
 
   <div class="opt-row">
+    <label><input type="checkbox" id="alpha-toggle" checked> 🎯 半透明のムラを補正する</label>
+    <span class="opt-hint">グレーなどが透けるのを軽減</span>
+  </div>
+
+  <div class="opt-row">
     <label><input type="checkbox" id="trim-toggle" checked> ✂️ 余白を自動トリミングする</label>
     <span class="opt-hint">透明な余白を輪郭ギリギリまでカット</span>
   </div>
@@ -273,7 +278,7 @@ h1{
   </div>
 
   <p class="note">
-    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
+    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「半透明のムラを補正する」はデフォルトでオンになっていて、グレーなど彩度の低い部分が中途半端に透けてしまうのを軽減します（それでも消えすぎる場合は、処理後の「✎ 修正」で手直しできます）。「高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
   </p>
 </div>
 
@@ -337,6 +342,35 @@ function upscaleFile(file, factor){
     };
     img.onerror = () => resolve(file);
     img.src = URL.createObjectURL(file);
+  });
+}
+
+function boostAlpha(blob, lowThresh, highThresh){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const cx = c.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      const imageData = cx.getImageData(0, 0, c.width, c.height);
+      const d = imageData.data;
+      const lo = lowThresh != null ? lowThresh : 25;
+      const hi = highThresh != null ? highThresh : 220;
+      for(let p = 3; p < d.length; p += 4){
+        const a = d[p];
+        if(a <= lo){ d[p] = 0; }
+        else if(a >= hi){ d[p] = 255; }
+        else{
+          // lo〜hiの範囲だけ、急な階調に引き伸ばして中途半端な半透明を減らす
+          d[p] = Math.round(((a - lo) / (hi - lo)) * 255);
+        }
+      }
+      cx.putImageData(imageData, 0, 0);
+      c.toBlob(b => resolve(b), 'image/png');
+    };
+    img.onerror = () => resolve(blob);
+    img.src = URL.createObjectURL(blob);
   });
 }
 
@@ -633,9 +667,12 @@ async function processOne(i){
       setBadge(i, 'proc', 'AI処理中...');
     }
     const blob = await removeBackground(inputFile, IMGLY_CONFIG);
-    let finalBlob = document.getElementById('trim-toggle').checked
-      ? await trimTransparentMargins(blob, 0.02)
+    let finalBlob = document.getElementById('alpha-toggle').checked
+      ? await boostAlpha(blob, 25, 220)
       : blob;
+    finalBlob = document.getElementById('trim-toggle').checked
+      ? await trimTransparentMargins(finalBlob, 0.02)
+      : finalBlob;
     if(document.getElementById('upscale-toggle').checked){
       const targetPx = parseInt(document.getElementById('export-size').value) || 3000;
       finalBlob = await resizeToLongestSide(finalBlob, targetPx);
