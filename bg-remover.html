@@ -226,12 +226,15 @@ h1{
   </div>
 
   <div class="opt-row" style="flex-wrap:wrap">
-    <label><input type="checkbox" id="upscale-toggle"> 🔍 AIで高画質化してから処理する</label>
-    <span class="opt-hint" id="upscale-hint">初回はモデル追加DLあり</span>
-    <div id="export-size-row" style="display:none;flex-basis:100%;display:flex;align-items:center;gap:8px;margin-top:8px;">
+    <label><input type="checkbox" id="upscale-toggle"> 🔍 高画質化してから処理する</label>
+    <span class="opt-hint" id="upscale-hint">一瞬で完了・追加DLなし</span>
+    <div id="export-size-row" style="display:none;flex-basis:100%;display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
       <label style="font-size:12.5px;color:var(--muted);white-space:nowrap;">書き出しサイズ（長辺）</label>
       <input type="number" id="export-size" value="3000" min="500" max="8000" step="100" style="width:90px;font-family:'Jost',sans-serif;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:20px;background:var(--white);color:var(--ink);">
       <span style="font-size:12.5px;color:var(--muted);">px</span>
+      <label style="font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;margin-left:12px;">
+        <input type="checkbox" id="sharpen-toggle" checked style="width:15px;height:15px;accent-color:var(--sage);"> ✨ シャープにする
+      </label>
     </div>
   </div>
 
@@ -254,7 +257,7 @@ h1{
   </div>
 
   <p class="note">
-    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「AIで高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
+    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
   </p>
 </div>
 
@@ -291,33 +294,34 @@ h1{
 
 <script type="module">
 import { removeBackground, preload } from "https://esm.sh/@imgly/background-removal@1.5.5";
-import Upscaler from "https://esm.sh/upscaler@1.0.0-beta.19";
 
-let upscalerInstance = null;
-let upscalerLoading = null;
-function getUpscaler(){
-  if(upscalerInstance) return Promise.resolve(upscalerInstance);
-  if(upscalerLoading) return upscalerLoading;
-  upscalerLoading = new Promise((resolve, reject) => {
-    try{
-      const u = new Upscaler();
-      upscalerInstance = u;
-      resolve(u);
-    } catch(e){ reject(e); }
+function upscaleFile(file, factor){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const f = factor || 2;
+      const w = Math.round(img.width * f);
+      const h = Math.round(img.height * f);
+      // 2段階に分けて拡大すると、1回で拡大するより輪郭が滑らかになる
+      const midW = Math.round(img.width * Math.sqrt(f));
+      const midH = Math.round(img.height * Math.sqrt(f));
+      const mid = document.createElement('canvas');
+      mid.width = midW; mid.height = midH;
+      const midCx = mid.getContext('2d');
+      midCx.imageSmoothingEnabled = true;
+      midCx.imageSmoothingQuality = 'high';
+      midCx.drawImage(img, 0, 0, midW, midH);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const cx = c.getContext('2d');
+      cx.imageSmoothingEnabled = true;
+      cx.imageSmoothingQuality = 'high';
+      cx.drawImage(mid, 0, 0, w, h);
+      c.toBlob(b => resolve(new File([b], file.name, { type: 'image/png' })), 'image/png');
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
   });
-  return upscalerLoading;
-}
-
-async function upscaleFile(file){
-  const upscaler = await getUpscaler();
-  const dataUrl = await new Promise(res => {
-    const r = new FileReader();
-    r.onload = e => res(e.target.result);
-    r.readAsDataURL(file);
-  });
-  const upscaledDataUrl = await upscaler.upscale(dataUrl, { output: 'base64', patchSize: 64, padding: 4 });
-  const blob = await (await fetch(upscaledDataUrl)).blob();
-  return new File([blob], file.name, { type: blob.type || 'image/png' });
 }
 
 function trimTransparentMargins(blob, paddingPct){
@@ -373,6 +377,45 @@ function resizeToLongestSide(blob, targetPx){
     };
     img.onerror = () => resolve(blob);
     img.src = URL.createObjectURL(blob);
+  });
+}
+
+function sharpenFile(file, amount){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const cx = c.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      const imageData = cx.getImageData(0, 0, c.width, c.height);
+      const d = imageData.data;
+      const w = c.width, h = c.height;
+      const src = new Uint8ClampedArray(d);
+      const k = amount || 0.5; // シャープの強さ
+      // アンシャープマスク風の3x3カーネル
+      const kernel = [0, -k, 0, -k, 1 + 4 * k, -k, 0, -k, 0];
+      for(let y = 1; y < h - 1; y++){
+        for(let x = 1; x < w - 1; x++){
+          const idx = (y * w + x) * 4;
+          if(src[idx + 3] < 8) continue; // 透明な部分はスキップ
+          for(let ch = 0; ch < 3; ch++){
+            let sum = 0, ki = 0;
+            for(let dy = -1; dy <= 1; dy++){
+              for(let dx = -1; dx <= 1; dx++){
+                const nIdx = ((y + dy) * w + (x + dx)) * 4 + ch;
+                sum += src[nIdx] * kernel[ki++];
+              }
+            }
+            d[idx + ch] = Math.max(0, Math.min(255, sum));
+          }
+        }
+      }
+      cx.putImageData(imageData, 0, 0);
+      c.toBlob(b => resolve(new File([b], file.name, { type: 'image/png' })), 'image/png');
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
   });
 }
 
@@ -537,8 +580,11 @@ async function processOne(i){
   try{
     let inputFile = item.file;
     if(document.getElementById('upscale-toggle').checked){
-      setBadge(i, 'proc', 'AI高画質化中...');
+      setBadge(i, 'proc', '高画質化中...');
       inputFile = await upscaleFile(item.file);
+      if(document.getElementById('sharpen-toggle').checked){
+        inputFile = await sharpenFile(inputFile, 0.35);
+      }
       setBadge(i, 'proc', 'AI処理中...');
     }
     const blob = await removeBackground(inputFile, IMGLY_CONFIG);
