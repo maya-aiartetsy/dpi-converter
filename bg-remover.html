@@ -183,11 +183,11 @@ h1{
 .canvas-stage{
   background:repeating-conic-gradient(#e9e2df 0% 25%,#fff 0% 50%) 0 0/16px 16px;
   border-radius:12px;overflow:auto;border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
+  display:flex;align-items:flex-start;justify-content:flex-start;
   touch-action:none;
   max-height:60vh;
 }
-.canvas-stage canvas{display:block;cursor:crosshair;flex-shrink:0}
+.canvas-stage canvas{display:block;cursor:crosshair;flex-shrink:0;margin:auto}
 .zoom-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px}
 .zoom-row input[type=range]{flex:1;accent-color:var(--pink)}
 .editor-tools{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
@@ -304,7 +304,11 @@ h1{
     <div class="editor-tools">
       <button class="mode-btn mode-restore active" id="mode-restore" data-mode="restore">🌿 復元（消えすぎを戻す）</button>
       <button class="mode-btn mode-erase" id="mode-erase" data-mode="erase">🩷 消去（消し残しを消す）</button>
+      <button class="mode-btn" id="mode-magic" data-mode="magic" style="border-color:var(--pink);color:#b1504f;">🪄 クリックでエリアごと</button>
     </div>
+    <p style="font-size:11.5px;color:var(--muted);margin-top:6px;">
+      🪄をオンにすると、ブラシで塗る代わりに1回クリックするだけでつながった範囲をまとめて復元／消去できます。
+    </p>
     <div class="brush-row">
       <span>ブラシサイズ</span>
       <input type="range" id="brush-size" min="4" max="80" value="24">
@@ -753,6 +757,8 @@ let editIndex = null;
 let originalImg = null;
 let history = [];
 let mode = 'restore';
+let magicMode = false;
+let originalPixelData = null;
 let drawing = false;
 let brushSize = 24;
 
@@ -772,12 +778,28 @@ function applyZoom(){
   editCanvas.style.width = w + 'px';
   editCanvas.style.height = (w * editCanvas.height / editCanvas.width) + 'px';
 }
-document.querySelectorAll('.mode-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    mode = b.dataset.mode;
-    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-  });
+document.getElementById('mode-restore').addEventListener('click', () => {
+  mode = 'restore';
+  document.getElementById('mode-restore').classList.add('active');
+  document.getElementById('mode-erase').classList.remove('active');
+});
+document.getElementById('mode-erase').addEventListener('click', () => {
+  mode = 'erase';
+  document.getElementById('mode-erase').classList.add('active');
+  document.getElementById('mode-restore').classList.remove('active');
+});
+document.getElementById('mode-magic').addEventListener('click', () => {
+  magicMode = !magicMode;
+  const btn = document.getElementById('mode-magic');
+  if(magicMode){
+    btn.classList.add('active');
+    btn.style.background = 'var(--pink)';
+    btn.style.color = '#fff';
+  } else {
+    btn.classList.remove('active');
+    btn.style.background = '';
+    btn.style.color = '#b1504f';
+  }
 });
 
 async function openEditor(i){
@@ -793,6 +815,13 @@ async function openEditor(i){
 
   originalImg = srcImg;
   history = [eCtx.getImageData(0,0,editCanvas.width,editCanvas.height)];
+
+  // 元画像をキャンバスサイズに合わせて事前描画し、ピクセルデータをキャッシュ（クリック一括復元用）
+  const origCanvas = document.createElement('canvas');
+  origCanvas.width = editCanvas.width; origCanvas.height = editCanvas.height;
+  const origCtx = origCanvas.getContext('2d');
+  origCtx.drawImage(srcImg, 0, 0, editCanvas.width, editCanvas.height);
+  originalPixelData = origCtx.getImageData(0, 0, editCanvas.width, editCanvas.height).data;
 
   baseStageWidth = Math.min(500, resultImg.width);
   zoomPct = 100;
@@ -821,6 +850,49 @@ function canvasPos(e){
   return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
 }
 
+function magicFloodFill(startX, startY){
+  const w = editCanvas.width, h = editCanvas.height;
+  const imageData = eCtx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+  const startIdx = (Math.floor(startY) * w + Math.floor(startX)) * 4;
+  const startAlpha = d[startIdx + 3];
+  const isTransparentStart = startAlpha < 128;
+
+  // 復元モードは「透明な場所」を、消去モードは「不透明な場所」をクリック起点として繋がっている範囲を探す
+  if(mode === 'restore' && !isTransparentStart) return;
+  if(mode === 'erase' && isTransparentStart) return;
+
+  const visited = new Uint8Array(w * h);
+  const stack = [Math.floor(startY) * w + Math.floor(startX)];
+
+  while(stack.length){
+    const pos = stack.pop();
+    if(visited[pos]) continue;
+    const p = pos * 4;
+    const a = d[p + 3];
+    const isMatch = mode === 'restore' ? a < 140 : a >= 116;
+    if(!isMatch) continue;
+    visited[pos] = 1;
+
+    if(mode === 'restore'){
+      d[p] = originalPixelData[p];
+      d[p+1] = originalPixelData[p+1];
+      d[p+2] = originalPixelData[p+2];
+      d[p+3] = 255;
+    } else {
+      d[p+3] = 0;
+    }
+
+    const x = pos % w, y = Math.floor(pos / w);
+    if(x > 0 && !visited[pos-1]) stack.push(pos-1);
+    if(x < w-1 && !visited[pos+1]) stack.push(pos+1);
+    if(y > 0 && !visited[pos-w]) stack.push(pos-w);
+    if(y < h-1 && !visited[pos+w]) stack.push(pos+w);
+  }
+
+  eCtx.putImageData(imageData, 0, 0);
+}
+
 function paintAt(x, y){
   const r = brushSize / 2;
   if(mode === 'erase'){
@@ -842,8 +914,14 @@ function paintAt(x, y){
 
 function startDraw(e){
   e.preventDefault();
-  drawing = true;
   const p = canvasPos(e);
+  if(magicMode){
+    magicFloodFill(p.x, p.y);
+    history.push(eCtx.getImageData(0,0,editCanvas.width,editCanvas.height));
+    if(history.length > 25) history.shift();
+    return;
+  }
+  drawing = true;
   paintAt(p.x, p.y);
 }
 function moveDraw(e){
