@@ -283,7 +283,7 @@ h1{
   </div>
 
   <p class="note">
-    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「半透明のムラを補正する」はデフォルトでオンになっていて、グレーなど彩度の低い部分が中途半端に透けてしまうのを軽減します（それでも消えすぎる場合は、処理後の「✎ 修正」で手直しできます）。「高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
+    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「半透明のムラを補正する」はデフォルトでオンになっていて、グレーなど彩度の低い部分が中途半端に透けてしまうのを不透明側にだけ寄せて軽減します（完全に透明な背景を再び透けさせることはありません）。「高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
   </p>
 </div>
 
@@ -354,7 +354,7 @@ function upscaleFile(file, factor){
   });
 }
 
-function boostAlpha(blob, lowThresh, highThresh){
+function boostAlpha(blob, lowCutoff, strengthPct){
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -364,15 +364,15 @@ function boostAlpha(blob, lowThresh, highThresh){
       cx.drawImage(img, 0, 0);
       const imageData = cx.getImageData(0, 0, c.width, c.height);
       const d = imageData.data;
-      const lo = lowThresh != null ? lowThresh : 25;
-      const hi = highThresh != null ? highThresh : 220;
+      const cutoff = lowCutoff != null ? lowCutoff : 15;
+      const strength = (strengthPct != null ? strengthPct : 50) / 100;
       for(let p = 3; p < d.length; p += 4){
         const a = d[p];
-        if(a <= lo){ d[p] = 0; }
-        else if(a >= hi){ d[p] = 255; }
-        else{
-          // lo〜hiの範囲だけ、急な階調に引き伸ばして中途半端な半透明を減らす
-          d[p] = Math.round(((a - lo) / (hi - lo)) * 255);
+        if(a <= cutoff){
+          d[p] = 0;
+        } else {
+          // 不透明側にだけ寄せる（薄い色が誤って透明になることはない）
+          d[p] = Math.round(a + (255 - a) * strength);
         }
       }
       cx.putImageData(imageData, 0, 0);
@@ -682,9 +682,7 @@ async function processOne(i){
     let finalBlob = blob;
     if(document.getElementById('alpha-toggle').checked){
       const strength = parseInt(document.getElementById('alpha-strength').value) || 0;
-      const lo = Math.round(strength * 1.27);
-      const hi = 255 - lo;
-      finalBlob = await boostAlpha(blob, lo, hi);
+      finalBlob = await boostAlpha(blob, 15, strength);
     }
     finalBlob = document.getElementById('trim-toggle').checked
       ? await trimTransparentMargins(finalBlob, 0.02)
