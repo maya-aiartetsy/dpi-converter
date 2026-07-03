@@ -102,6 +102,15 @@ h1{
 }
 .drop-sub{font-size:12.5px;color:var(--muted)}
 
+.opt-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:12px 16px;margin:14px 0 0;
+}
+.opt-row label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer}
+.opt-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--sage);cursor:pointer}
+.opt-hint{font-size:11.5px;color:var(--muted);margin-left:auto}
+
 .file-list{display:flex;flex-direction:column;gap:10px;margin:20px 0}
 .file-row{
   display:flex;align-items:center;gap:12px;
@@ -173,11 +182,14 @@ h1{
 .editor-close{cursor:pointer;font-size:22px;color:var(--muted);line-height:1;background:none;border:none}
 .canvas-stage{
   background:repeating-conic-gradient(#e9e2df 0% 25%,#fff 0% 50%) 0 0/16px 16px;
-  border-radius:12px;overflow:hidden;border:1px solid var(--border);
+  border-radius:12px;overflow:auto;border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;
   touch-action:none;
+  max-height:60vh;
 }
-.canvas-stage canvas{max-width:100%;display:block;cursor:crosshair}
+.canvas-stage canvas{display:block;cursor:crosshair;flex-shrink:0}
+.zoom-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.zoom-row input[type=range]{flex:1;accent-color:var(--pink)}
 .editor-tools{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
 .mode-btn{
   padding:8px 16px;border-radius:20px;font-size:13px;cursor:pointer;
@@ -213,6 +225,21 @@ h1{
     <div class="drop-sub">PNG / JPG / WebP · 複数ファイル対応</div>
   </div>
 
+  <div class="opt-row" style="flex-wrap:wrap">
+    <label><input type="checkbox" id="upscale-toggle"> 🔍 AIで高画質化してから処理する</label>
+    <span class="opt-hint" id="upscale-hint">初回はモデル追加DLあり</span>
+    <div id="export-size-row" style="display:none;flex-basis:100%;display:flex;align-items:center;gap:8px;margin-top:8px;">
+      <label style="font-size:12.5px;color:var(--muted);white-space:nowrap;">書き出しサイズ（長辺）</label>
+      <input type="number" id="export-size" value="3000" min="500" max="8000" step="100" style="width:90px;font-family:'Jost',sans-serif;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:20px;background:var(--white);color:var(--ink);">
+      <span style="font-size:12.5px;color:var(--muted);">px</span>
+    </div>
+  </div>
+
+  <div class="opt-row">
+    <label><input type="checkbox" id="trim-toggle" checked> ✂️ 余白を自動トリミングする</label>
+    <span class="opt-hint">透明な余白を輪郭ギリギリまでカット</span>
+  </div>
+
   <div id="file-list" class="file-list"></div>
 
   <div id="summary" class="summary" style="display:none">
@@ -227,7 +254,7 @@ h1{
   </div>
 
   <p class="note">
-    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。処理後、サムネイルをクリックすると細部を手直しできます。
+    AIモデルをこのページの中に読み込み、あなたのブラウザの中だけで処理します。画像は外部サーバーに送信されません。「AIで高画質化」をオンにすると、処理前に画像を約2倍のサイズに引き伸ばしてから背景を透過します（Midjourneyなどの2000px画像を3000px以上にしたい場合におすすめです）。「余白を自動トリミング」はデフォルトでオンになっていて、背景透過後に絵の輪郭ギリギリまで自動で切り詰めます。処理後、サムネイルをクリックすると細部を手直しでき、編集画面ではズームで拡大しながら調整できます。
   </p>
 </div>
 
@@ -237,8 +264,13 @@ h1{
       <span class="editor-title">仕上がりを整える</span>
       <button class="editor-close" id="editor-close">×</button>
     </div>
-    <div class="canvas-stage">
+    <div class="canvas-stage" id="canvas-stage">
       <canvas id="edit-canvas"></canvas>
+    </div>
+    <div class="zoom-row">
+      <span>🔍 ズーム</span>
+      <input type="range" id="zoom-slider" min="50" max="400" value="100">
+      <span id="zoom-val">100%</span>
     </div>
     <div class="editor-tools">
       <button class="mode-btn mode-restore active" id="mode-restore" data-mode="restore">🌿 復元（消えすぎを戻す）</button>
@@ -259,6 +291,90 @@ h1{
 
 <script type="module">
 import { removeBackground, preload } from "https://esm.sh/@imgly/background-removal@1.5.5";
+import Upscaler from "https://esm.sh/upscaler@1.0.0-beta.19";
+
+let upscalerInstance = null;
+let upscalerLoading = null;
+function getUpscaler(){
+  if(upscalerInstance) return Promise.resolve(upscalerInstance);
+  if(upscalerLoading) return upscalerLoading;
+  upscalerLoading = new Promise((resolve, reject) => {
+    try{
+      const u = new Upscaler();
+      upscalerInstance = u;
+      resolve(u);
+    } catch(e){ reject(e); }
+  });
+  return upscalerLoading;
+}
+
+async function upscaleFile(file){
+  const upscaler = await getUpscaler();
+  const dataUrl = await new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.readAsDataURL(file);
+  });
+  const upscaledDataUrl = await upscaler.upscale(dataUrl, { output: 'base64' });
+  const blob = await (await fetch(upscaledDataUrl)).blob();
+  return new File([blob], file.name, { type: blob.type || 'image/png' });
+}
+
+function trimTransparentMargins(blob, paddingPct){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const cx = c.getContext('2d');
+      cx.drawImage(img, 0, 0);
+      const data = cx.getImageData(0, 0, c.width, c.height).data;
+      let minX = c.width, minY = c.height, maxX = 0, maxY = 0, found = false;
+      for(let y = 0; y < c.height; y++){
+        for(let x = 0; x < c.width; x++){
+          const alpha = data[(y * c.width + x) * 4 + 3];
+          if(alpha > 8){
+            found = true;
+            if(x < minX) minX = x;
+            if(x > maxX) maxX = x;
+            if(y < minY) minY = y;
+            if(y > maxY) maxY = y;
+          }
+        }
+      }
+      if(!found){ resolve(blob); return; }
+      const padX = Math.round((maxX - minX) * (paddingPct || 0.02));
+      const padY = Math.round((maxY - minY) * (paddingPct || 0.02));
+      minX = Math.max(0, minX - padX); minY = Math.max(0, minY - padY);
+      maxX = Math.min(c.width - 1, maxX + padX); maxY = Math.min(c.height - 1, maxY + padY);
+      const w = maxX - minX + 1, h = maxY - minY + 1;
+      const out = document.createElement('canvas');
+      out.width = w; out.height = h;
+      out.getContext('2d').drawImage(c, minX, minY, w, h, 0, 0, w, h);
+      out.toBlob(b => resolve(b), 'image/png');
+    };
+    img.onerror = () => resolve(blob);
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+function resizeToLongestSide(blob, targetPx){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const longest = Math.max(img.width, img.height);
+      if(!targetPx || longest === targetPx){ resolve(blob); return; }
+      const scale = targetPx / longest;
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      c.toBlob(b => resolve(b), 'image/png');
+    };
+    img.onerror = () => resolve(blob);
+    img.src = URL.createObjectURL(blob);
+  });
+}
 
 let files = [];
 const modelStatus = document.getElementById('model-status');
@@ -298,6 +414,9 @@ setTimeout(() => {
 }, 30000);
 
 document.getElementById('file-input').addEventListener('change', e => addFiles(e.target.files));
+document.getElementById('upscale-toggle').addEventListener('change', e => {
+  document.getElementById('export-size-row').style.display = e.target.checked ? 'flex' : 'none';
+});
 dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('over'); });
 dropEl.addEventListener('dragleave', () => dropEl.classList.remove('over'));
 dropEl.addEventListener('drop', e => { e.preventDefault(); dropEl.classList.remove('over'); addFiles(e.dataTransfer.files); });
@@ -416,8 +535,21 @@ function animProg(i){
 async function processOne(i){
   const item = files[i];
   try{
-    const blob = await removeBackground(item.file, IMGLY_CONFIG);
-    item.result = URL.createObjectURL(blob);
+    let inputFile = item.file;
+    if(document.getElementById('upscale-toggle').checked){
+      setBadge(i, 'proc', 'AI高画質化中...');
+      inputFile = await upscaleFile(item.file);
+      setBadge(i, 'proc', 'AI処理中...');
+    }
+    const blob = await removeBackground(inputFile, IMGLY_CONFIG);
+    let finalBlob = document.getElementById('trim-toggle').checked
+      ? await trimTransparentMargins(blob, 0.02)
+      : blob;
+    if(document.getElementById('upscale-toggle').checked){
+      const targetPx = parseInt(document.getElementById('export-size').value) || 3000;
+      finalBlob = await resizeToLongestSide(finalBlob, targetPx);
+    }
+    item.result = URL.createObjectURL(finalBlob);
     item.status = 'done';
   } catch(e){
     console.error(e);
@@ -473,6 +605,18 @@ document.getElementById('brush-size').addEventListener('input', e => {
   brushSize = parseInt(e.target.value);
   document.getElementById('brush-size-val').textContent = brushSize + 'px';
 });
+let zoomPct = 100;
+let baseStageWidth = 500;
+document.getElementById('zoom-slider').addEventListener('input', e => {
+  zoomPct = parseInt(e.target.value);
+  document.getElementById('zoom-val').textContent = zoomPct + '%';
+  applyZoom();
+});
+function applyZoom(){
+  const w = baseStageWidth * (zoomPct / 100);
+  editCanvas.style.width = w + 'px';
+  editCanvas.style.height = (w * editCanvas.height / editCanvas.width) + 'px';
+}
 document.querySelectorAll('.mode-btn').forEach(b => {
   b.addEventListener('click', () => {
     mode = b.dataset.mode;
@@ -495,9 +639,11 @@ async function openEditor(i){
   originalImg = srcImg;
   history = [eCtx.getImageData(0,0,editCanvas.width,editCanvas.height)];
 
-  const stageWidth = Math.min(500, resultImg.width);
-  editCanvas.style.width = stageWidth + 'px';
-  editCanvas.style.height = (stageWidth * resultImg.height / resultImg.width) + 'px';
+  baseStageWidth = Math.min(500, resultImg.width);
+  zoomPct = 100;
+  document.getElementById('zoom-slider').value = 100;
+  document.getElementById('zoom-val').textContent = '100%';
+  applyZoom();
 }
 
 function loadImage(src){
