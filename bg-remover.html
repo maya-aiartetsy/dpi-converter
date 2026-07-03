@@ -405,7 +405,7 @@ function trimTransparentMargins(blob, paddingPct){
           }
         }
       }
-      if(!found){ resolve(blob); return; }
+      if(!found){ resolve({blob, minX:0, minY:0}); return; }
       const padX = Math.round((maxX - minX) * (paddingPct || 0.02));
       const padY = Math.round((maxY - minY) * (paddingPct || 0.02));
       minX = Math.max(0, minX - padX); minY = Math.max(0, minY - padY);
@@ -414,9 +414,9 @@ function trimTransparentMargins(blob, paddingPct){
       const out = document.createElement('canvas');
       out.width = w; out.height = h;
       out.getContext('2d').drawImage(c, minX, minY, w, h, 0, 0, w, h);
-      out.toBlob(b => resolve(b), 'image/png');
+      out.toBlob(b => resolve({blob: b, minX, minY}), 'image/png');
     };
-    img.onerror = () => resolve(blob);
+    img.onerror = () => resolve({blob, minX:0, minY:0});
     img.src = URL.createObjectURL(blob);
   });
 }
@@ -426,15 +426,15 @@ function resizeToLongestSide(blob, targetPx){
     const img = new Image();
     img.onload = () => {
       const longest = Math.max(img.width, img.height);
-      if(!targetPx || longest === targetPx){ resolve(blob); return; }
+      if(!targetPx || longest === targetPx){ resolve({blob, scale:1}); return; }
       const scale = targetPx / longest;
       const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       c.getContext('2d').drawImage(img, 0, 0, w, h);
-      c.toBlob(b => resolve(b), 'image/png');
+      c.toBlob(b => resolve({blob: b, scale}), 'image/png');
     };
-    img.onerror = () => resolve(blob);
+    img.onerror = () => resolve({blob, scale:1});
     img.src = URL.createObjectURL(blob);
   });
 }
@@ -491,9 +491,9 @@ function padToSquare(blob, sizePx){
       cx.imageSmoothingQuality = 'high';
       const dx = Math.round((sizePx - w) / 2), dy = Math.round((sizePx - h) / 2);
       cx.drawImage(img, dx, dy, w, h);
-      c.toBlob(b => resolve(b), 'image/png');
+      c.toBlob(b => resolve({blob: b, scale, dx, dy}), 'image/png');
     };
-    img.onerror = () => resolve(blob);
+    img.onerror = () => resolve({blob, scale:1, dx:0, dy:0});
     img.src = URL.createObjectURL(blob);
   });
 }
@@ -670,9 +670,14 @@ async function processOne(i){
   const item = files[i];
   try{
     let inputFile = item.file;
+    // originalからresultへの座標変換を追跡（復元ブラシがズレないようにするため）
+    let tScale = 1, tOffsetX = 0, tOffsetY = 0;
+    const UPSCALE_FACTOR = 2;
+
     if(document.getElementById('upscale-toggle').checked){
       setBadge(i, 'proc', '高画質化中...');
-      inputFile = await upscaleFile(item.file);
+      inputFile = await upscaleFile(item.file, UPSCALE_FACTOR);
+      tScale *= UPSCALE_FACTOR;
       if(document.getElementById('sharpen-toggle').checked){
         inputFile = await sharpenFile(inputFile, 0.35);
       }
@@ -684,17 +689,29 @@ async function processOne(i){
       const strength = parseInt(document.getElementById('alpha-strength').value) || 0;
       finalBlob = await boostAlpha(blob, 15, strength);
     }
-    finalBlob = document.getElementById('trim-toggle').checked
-      ? await trimTransparentMargins(finalBlob, 0.02)
-      : finalBlob;
+    if(document.getElementById('trim-toggle').checked){
+      const trimRes = await trimTransparentMargins(finalBlob, 0.02);
+      finalBlob = trimRes.blob;
+      tOffsetX = tOffsetX - trimRes.minX;
+      tOffsetY = tOffsetY - trimRes.minY;
+    }
     if(document.getElementById('upscale-toggle').checked){
       const targetPx = parseInt(document.getElementById('export-size').value) || 3000;
-      finalBlob = await resizeToLongestSide(finalBlob, targetPx);
+      const resizeRes = await resizeToLongestSide(finalBlob, targetPx);
+      finalBlob = resizeRes.blob;
+      tScale *= resizeRes.scale;
+      tOffsetX *= resizeRes.scale;
+      tOffsetY *= resizeRes.scale;
     }
     if(document.getElementById('square-toggle').checked){
       const squarePx = parseInt(document.getElementById('square-size').value) || 3000;
-      finalBlob = await padToSquare(finalBlob, squarePx);
+      const squareRes = await padToSquare(finalBlob, squarePx);
+      finalBlob = squareRes.blob;
+      tScale *= squareRes.scale;
+      tOffsetX = tOffsetX * squareRes.scale + squareRes.dx;
+      tOffsetY = tOffsetY * squareRes.scale + squareRes.dy;
     }
+    item.transform = { scale: tScale, offsetX: tOffsetX, offsetY: tOffsetY };
     item.result = URL.createObjectURL(finalBlob);
     item.status = 'done';
   } catch(e){
@@ -753,6 +770,7 @@ const editCanvas = document.getElementById('edit-canvas');
 const eCtx = editCanvas.getContext('2d');
 let editIndex = null;
 let originalImg = null;
+let originalTransform = null;
 let history = [];
 let mode = 'restore';
 let magicMode = false;
@@ -812,13 +830,20 @@ async function openEditor(i){
   eCtx.drawImage(resultImg, 0, 0);
 
   originalImg = srcImg;
+  originalTransform = item.transform || { scale: 1, offsetX: 0, offsetY: 0 };
   history = [eCtx.getImageData(0,0,editCanvas.width,editCanvas.height)];
 
-  // 元画像をキャンバスサイズに合わせて事前描画し、ピクセルデータをキャッシュ（クリック一括復元用）
+  // 元画像を、実際に処理で使われた拡大率・位置に合わせて正しく配置してからピクセルデータをキャッシュ
+  // （これをしないと、拡大やトリミングの分だけ復元した部分がズレてしまう）
   const origCanvas = document.createElement('canvas');
   origCanvas.width = editCanvas.width; origCanvas.height = editCanvas.height;
   const origCtx = origCanvas.getContext('2d');
-  origCtx.drawImage(srcImg, 0, 0, editCanvas.width, editCanvas.height);
+  const t = originalTransform;
+  origCtx.drawImage(
+    srcImg,
+    0, 0, srcImg.width, srcImg.height,
+    t.offsetX, t.offsetY, srcImg.width * t.scale, srcImg.height * t.scale
+  );
   originalPixelData = origCtx.getImageData(0, 0, editCanvas.width, editCanvas.height).data;
 
   baseStageWidth = Math.min(500, resultImg.width);
@@ -901,11 +926,16 @@ function paintAt(x, y){
     eCtx.fill();
     eCtx.restore();
   } else {
+    const t = originalTransform || { scale: 1, offsetX: 0, offsetY: 0 };
     eCtx.save();
     eCtx.beginPath();
     eCtx.arc(x, y, r, 0, Math.PI*2);
     eCtx.clip();
-    eCtx.drawImage(originalImg, 0, 0, editCanvas.width, editCanvas.height);
+    eCtx.drawImage(
+      originalImg,
+      0, 0, originalImg.width, originalImg.height,
+      t.offsetX, t.offsetY, originalImg.width * t.scale, originalImg.height * t.scale
+    );
     eCtx.restore();
   }
 }
