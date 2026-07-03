@@ -315,7 +315,7 @@ async function upscaleFile(file){
     r.onload = e => res(e.target.result);
     r.readAsDataURL(file);
   });
-  const upscaledDataUrl = await upscaler.upscale(dataUrl, { output: 'base64' });
+  const upscaledDataUrl = await upscaler.upscale(dataUrl, { output: 'base64', patchSize: 64, padding: 4 });
   const blob = await (await fetch(upscaledDataUrl)).blob();
   return new File([blob], file.name, { type: blob.type || 'image/png' });
 }
