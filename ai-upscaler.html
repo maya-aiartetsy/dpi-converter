@@ -81,7 +81,7 @@ canvas{display:none}
   </header>
 
   <div class="warn-box">
-    <strong>このツールについて：</strong> 本格的なAIモデルを使うため処理が重く、1枚ずつの処理専用です。大きすぎる画像はブラウザがフリーズする原因になるため、内部で自動的に縮小してから処理し、仕上げにご希望のサイズへ戻します。数十秒〜数分かかることがあります。
+    <strong>このツールについて：</strong> 本格的なAIモデルを使うため処理が重く、1枚ずつの処理専用です。約2200pxまでの画像はそのままAIに渡して高画質を保ちます。それより大きい画像はブラウザがフリーズする原因になるため、内部で自動的に縮小してから処理し、仕上げにご希望のサイズへ戻します。数十秒〜数分かかることがあります。
   </div>
 
   <div class="model-card" id="model-status">
@@ -279,7 +279,7 @@ async function handleFile(file){
     document.getElementById('before-meta').textContent = img.width + ' × ' + img.height + ' px';
 
     // GPUのテクスチャ上限対策：AIモデルに渡す前に長辺1000px程度まで縮小
-    const SAFE_MAX = 1000;
+    const SAFE_MAX = 2200;
     let sourceForAI = img;
     if(Math.max(img.width, img.height) > SAFE_MAX){
       statusLine.textContent = '大きい画像なので事前に縮小しています...';
