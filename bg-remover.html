@@ -253,6 +253,12 @@ h1{
     </div>
   </div>
 
+  <div class="opt-row" style="flex-wrap:wrap">
+    <label style="font-size:12.5px;color:var(--muted);white-space:nowrap;">📝 ファイル名</label>
+    <input type="text" id="rename-input" placeholder="例：christmas（空欄なら元のファイル名のまま）" style="flex:1;min-width:160px;font-family:'Jost',sans-serif;font-size:13px;padding:7px 12px;border:1px solid var(--border);border-radius:20px;background:var(--white);color:var(--ink);outline:none;">
+    <span class="opt-hint" id="rename-preview">例：flower_nobg.png</span>
+  </div>
+
   <div id="file-list" class="file-list"></div>
 
   <div id="summary" class="summary" style="display:none">
@@ -487,6 +493,12 @@ setTimeout(() => {
 }, 30000);
 
 document.getElementById('file-input').addEventListener('change', e => addFiles(e.target.files));
+document.getElementById('rename-input').addEventListener('input', e => {
+  const val = e.target.value.trim();
+  document.getElementById('rename-preview').textContent = val
+    ? '例：' + val + '_01_nobg.png'
+    : '例：flower_nobg.png';
+});
 document.getElementById('upscale-toggle').addEventListener('change', e => {
   document.getElementById('export-size-row').style.display = e.target.checked ? 'flex' : 'none';
 });
@@ -641,19 +653,30 @@ async function processOne(i){
   }
 }
 
+function getOutputName(item, index){
+  const prefix = document.getElementById('rename-input').value.trim();
+  if(!prefix){
+    return item.name.replace(/\.(png|jpe?g|webp)$/i, '_nobg.png');
+  }
+  const num = String(index + 1).padStart(2, '0');
+  return prefix + '_' + num + '_nobg.png';
+}
+
 function dlOne(i){
   const a = document.createElement('a');
   a.href = files[i].result;
-  a.download = files[i].name.replace(/\.(png|jpe?g|webp)$/i, '_nobg.png');
+  a.download = getOutputName(files[i], i);
   a.click();
 }
 
 async function dlZip(){
   const zip = new window.JSZip();
-  for(const f of files.filter(f => f.status==='done')){
+  const doneFiles = files.filter(f => f.status==='done');
+  for(let idx = 0; idx < doneFiles.length; idx++){
+    const f = doneFiles[idx];
     const resp = await fetch(f.result);
     const blob = await resp.blob();
-    zip.file(f.name.replace(/\.(png|jpe?g|webp)$/i, '_nobg.png'), blob);
+    zip.file(getOutputName(f, idx), blob);
   }
   const blob = await zip.generateAsync({type:'blob'});
   const a = document.createElement('a');
